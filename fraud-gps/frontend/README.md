@@ -1,4 +1,4 @@
-# Fraud GPS frontend — Phase 2
+# Fraud GPS frontend — Phases 2–4
 
 React/TypeScript investigation workspace with a live Cytoscape transaction graph.
 Vite serves development on port 3000; the FastAPI backend runs on port 8000.
@@ -39,26 +39,85 @@ Dependencies are pinned in `package.json` and `package-lock.json`.
 3. Inspect an account by clicking a node; inspect a transfer by clicking an edge.
    **Browse records** provides equivalent keyboard-accessible account/transfer buttons.
 4. Right-click a node or use **Expand neighborhood** in the inspector to load its
-   one-hop context. Cyan dashed edges are traced transfers; added context is dimmed.
+   one-hop context. Solid cyan arrows are traced transfers; added context is dimmed.
    **Clear expansion** restores the original trail.
-5. Use Graph for a force layout, Route for directed layers, or Cluster for grouping by
+5. Route is the default, with transfers arranged from left to right. Crowded hops wrap
+   into staggered columns on short laptop screens. Use Graph for a force layout or Cluster for grouping by
    bank. Bank groups do not imply criminal campaigns. Suspicious-only displays risk
    scores >=0.50 plus the victim and removes edges with hidden endpoints.
 
 Search covers all loaded complaint IDs/victim names and account IDs/masked labels/holder
 names. Multiple matches retain stable internal IDs to disambiguate masking collisions.
 Zoom, pan, hover details, fit, and reset-layout controls are functional. Risk controls
-node color/size; victims are blue diamonds and probable endpoints are dark squares with
-risk-colored borders. Parallel transfers remain separate edges.
+node border color/size; victims are blue diamonds and probable endpoints are dark squares with
+risk-colored borders. Parallel transfers remain separate edges. Labels stay at 13 rendered
+pixels while zooming. **Cases** toggles the case controls; **Inspector** toggles evidence;
+the expand icon gives the graph the workspace. Selecting an account or analyzing DNA
+opens the inspector. Compact screens show one side panel at a time. Mobile starts
+with a readable part of the trail; drag to explore or use **Fit graph** for the full network.
 
 The inspector shows source account details, bounded risk components and formulas,
 source evidence IDs, inflow/outflow, unique counterparties, linked complaints, and
 amount-weighted observed FIFO forwarding time. No observed forwarding displays
 **Not observed**. Account age includes its observation date and does not imply dormancy.
 
-The status strip shows the trace's transfer time range. Timeline playback, linked-case
-DNA, reports, and alert navigation remain future phases; their controls are disabled or
-non-interactive with phase labels. The header risk count is derived from the full dataset.
+6. Click **Replay Trail** in the sidebar or Play in the bottom strip. Replay starts
+   with the victim and follows the ordered API events. Pause, previous/next, the
+   scrubber, event markers, and milestone pills all use the same event sequence.
+   Choose 0.5x, 1x, 2x, or 3x. Replay restarts; bottom Play resumes a paused trail
+   and restarts at completion. The eye button restores the full investigation.
+7. Significant events show cards anchored to their rendered account positions.
+   Cards follow zoom/pan and remain inside the canvas. Role tags appear below
+   accounts involved in the current event; overview shows a role tag only on the selected account.
+   Completion shows full-trail counts, even with display filters.
+   **Full trail statistics** in the sidebar counts seeded funds once and deduplicates
+   endpoint accounts. Hover each statistic for its definition.
+
+Replay is event-paced (one second per event at 1x), with IST timestamps showing the
+actual evidence time. Transfers light exact edges; splits highlight measured outputs;
+rapid forwards are orange; probable endpoints are dark with red receipt edges; layering
+chains cascade at 150ms/account. Context and unrevealed elements are dimmed. Reduced
+motion suppresses pulses, fades, and dash movement while retaining all controls.
+Cards expire after three seconds of active playback; pause freezes their remaining
+time. Seeking reconstructs the graph directly. Changing a case/options, retracing,
+reloading, or unmounting clears old playback; hiding the tab pauses it.
+
+The first demo case at the default four hops reaches a depth cutoff. Increase to
+five hops and trace again to include four distinct probable endpoints. These are
+inferred endpoints, with unknown withdrawal methods. The existing demo dataset has
+no qualifying layering detection; that renderer is verified with an independent
+chain fixture. The generator and datasets are unchanged.
+
+8. Click **Find Linked Cases** after a nonempty trace. The right panel opens the
+   **Fraud DNA** tab, with the signature ring, exact component weights, inferred
+   family, source loss totals, masked identifiers, similar cases, behavior, and
+   topology. The bottom trace statistics remain scoped to the original trace.
+9. Expand an identifier to see current accounts, external peers, and other case IDs.
+   Its drawn relations highlight in purple. Select an account for its risk/source
+   inspector, or select a similar case to load that case's real trace. Tabs retain
+   successful analysis. Case/options/retrace/reload discard it and cancel requests.
+10. Purple dashed graph lines are **shared identifiers**, with no arrowheads or
+    financial fields. Inspect one through **Browse records** for source IDs.
+    **Hide DNA links** or the summary-card close button removes DNA graph context;
+    **Show DNA links** restores it. Replay dims these links and never animates them
+    as money. Route layout ignores identifier edges when deriving transaction layers.
+
+DNA uses source-derived comparisons at the current trace options, with
+**40% entity / 35% behavioral / 25% network** weighting. The displayed components
+all belong to the same closest other case. Inferred families use neutral names
+such as “Family 01 · Night activity”; prepared campaign labels are not used.
+An inferred family, a shared-identifier link, and a pattern-only similarity are
+different findings. Empty identifier/network evidence is not a perfect match.
+Missing forwarding/dormancy stays **Not observed**; withdrawal method is **Unknown**.
+
+The demo derives families of 30, 16, and 4 cases. The first case at four hops has
+54 shared-identifier records linking 45 other complaints, and seven drawable
+relations. Lone Wolf has three other same-family cases sharing reused accounts,
+with no external relation to other families. No fake self-edge is drawn.
+
+Reports and alert navigation remain future phases. The header risk count is derived
+from the full dataset. Sidebar other-complaint counts use account links; DNA's linked
+case count specifically uses shared identifiers. All records remain synthetic.
 
 ## Configuration and data integrity
 
@@ -71,11 +130,15 @@ Requests have timeouts and AbortSignals. Case/filter changes discard obsolete re
 results, expanded graphs, selections, and animation timers. Node inspection is isolated
 by selection; delayed evidence cannot overwrite a newer selection. Dataset-version
 mismatches are rejected. **Reload workspace** refreshes cases and catalog after a backend
-dataset change. Errors support retries for startup, tracing, inspection, and expansion.
+dataset change. Errors support retries for startup, tracing, inspection, expansion, and
+the timeline and DNA independently. A failed DNA/timeline request keeps the valid
+trace available. DNA response validation checks dataset/options, the weighted score,
+self exclusion, and identifier relation provenance before drawing any links.
 
 Amounts stay decimal strings; `formatCurrency` uses BigInt to avoid rounding large INR
-values. Dates/times use Asia/Kolkata. Numbers are used only for sliders and visual edge
-scales. Seed funds are separate from repeated hop volume; no recovered money is claimed.
+values. Dates/times use Asia/Kolkata. Financial amounts never use Number for arithmetic;
+counts, measured time intervals, sliders, and visual scales use numbers. Seed funds are
+separate from repeated hop volume; no recovered money is claimed.
 
 ## Build and verification
 
@@ -87,12 +150,22 @@ npm.cmd run test:e2e
 ```
 
 - Build checks strict TypeScript and emits `dist/`. The graph renderer loads separately.
-- Vitest: 14 tests for exact formatting, timezone boundaries, masks, graph filtering,
-  parallel-edge preservation, attribution preservation, and mixed dataset rejection.
-- Playwright: 9 tests using installed **Google Chrome**, the actual local backend, and
-  Vite. Stop other servers on ports 8000 and 3000 first; tests own and stop their servers.
+- Vitest: 49 tests for exact formatting, timezone boundaries, masks, graph filtering,
+  parallel-edge preservation, attribution preservation, timeline integrity, pure prefix
+  reconstruction, controls/cadence, layering cascade cleanup, card positioning,
+  DNA validation, midnight windows, and nonfinancial relation preservation/filtering.
+- Playwright: 28 tests using installed **Google Chrome**, the actual local backend, and
+  the production frontend. The script builds first, then serves `npm run preview`.
+  Stop other servers on ports 8000 and 3000 first; tests own and stop their servers.
   Tests include node clicks, right-click expansion, inspector, record selection, layouts,
   search, empty results, retry, delayed-response races, dataset mismatch, and mobile overflow.
+  Playback tests check all speeds, step/drag/seek equivalence, pause, replay, complete
+  autoplay, event cards, zoom/pan anchoring, role tags, dimmed expansion, filtered totals,
+  timeline errors/version mismatch, delayed requests, tab visibility, and timer cleanup.
+  DNA tests cover real analysis/campaigns, masked evidence, highlighted relations,
+  nonfinancial inspection, similar-case navigation, retry, stale responses, dataset
+  and score mismatches, graph filtering/hiding/replay, independent Lone Wolf, mobile
+  layout, and keyboard tab navigation. Normal flows check browser errors/warnings.
 - Prettier is the frontend formatter (`npm.cmd run format`). No separate frontend linter
   is configured. Backend Ruff remains unchanged.
 
@@ -103,6 +176,11 @@ Injected abort tests can produce a Windows asyncio connection-reset diagnostic w
 failing the browser flow. The successful normal flow is checked for browser console errors.
 
 `npm.cmd run preview` serves the built frontend on port 3000, with the backend still needed.
-Browser verification used the development server; the production bundle was build-checked.
+Phase 3 browser verification uses the production bundle. Early development-server runs
+had intermittent cold module-loading stalls under low available Windows memory; serving
+the built bundle avoids that test-runner dependency.
 
-See [Phase 2 review](../../docs/PHASE_2_REVIEW.md) and [implementation decisions](../../docs/PHASE_2_CONTRACT.md).
+See [Phase 3 contract](../../docs/PHASE_3_CONTRACT.md),
+[Phase 4 contract](../../docs/PHASE_4_CONTRACT.md),
+[Phase 4 review](../../docs/PHASE_4_REVIEW.md), and the historical
+[Phase 2 review](../../docs/PHASE_2_REVIEW.md).

@@ -2,7 +2,7 @@
 
 ## Execution rules
 
-Phases 0, 1, and 2 are **verified** following the user's explicit implementation requests. Phases 3–6 are **not started**. Activate only the requested phase, complete its checks, update [PROGRESS.md](PROGRESS.md), and stop. Explicit user direction is required to advance to the next phase.
+Phases 0–4 are **verified** following the user's explicit implementation requests. Phases 5–6 are **not started**. Activate only the requested phase, complete its checks, update [PROGRESS.md](PROGRESS.md), and stop. Explicit user direction is required to advance to the next phase.
 
 Within an active phase, team members may divide modules against agreed contracts. Record ownership before editing shared files. Do not pull later features into the phase except a documented prerequisite needed for the current integration.
 
@@ -43,22 +43,22 @@ Deliver React/TypeScript layout, typed API client, complaint selection, function
 
 Deliver playback controls, speeds, scrubber, replay, graph event animation, floating cards, role labels, and complete statistics.
 
-- [ ] Verify play/pause, both step directions, speed changes, and scrubbing against the same ordered events.
-- [ ] Reconstruct the same visible graph for a given step regardless of playback history.
-- [ ] Clean up animation timers on replay, case changes, and unmount; verify zoomed event-card positioning.
-- [ ] Define amount statistics without counting the same funds again at each hop.
-- [ ] Stop for Phase 3 review.
+- [x] Verify play/pause, both step directions, speed changes, and scrubbing against the same ordered events.
+- [x] Reconstruct the same visible graph for a given step regardless of playback history.
+- [x] Clean up animation timers on replay, case changes, and unmount; verify zoomed event-card positioning.
+- [x] Define amount statistics without counting the same funds again at each hop.
+- [x] Stop for Phase 3 review. Evidence: [PHASE_3_REVIEW.md](PHASE_3_REVIEW.md).
 
 ## Phase 4 — Fraud DNA
 
 Deliver entity, behavioral, network, and composite DNA; campaign APIs; typed panel; similar cases; and cross-case graph links.
 
-- [ ] Compute or reproducibly precompute scores from source data; document any fixtures.
-- [ ] Verify the 0.40 entity / 0.35 behavioral / 0.25 network combination and bounded outputs.
-- [ ] Exclude self-matches; verify expected overlaps and independent Lone Wolf results.
-- [ ] Keep entity links visually and semantically separate from transfers.
-- [ ] Verify dataset replacement invalidates cached fingerprints and precomputed similarities.
-- [ ] Stop for Phase 4 review.
+- [x] Compute or reproducibly precompute scores from source data; document any fixtures.
+- [x] Verify the 0.40 entity / 0.35 behavioral / 0.25 network combination and bounded outputs.
+- [x] Exclude self-matches; verify expected overlaps and independent Lone Wolf results.
+- [x] Keep entity links visually and semantically separate from transfers.
+- [x] Verify dataset replacement invalidates cached fingerprints and precomputed similarities.
+- [x] Stop for Phase 4 review. Evidence: [PHASE_4_REVIEW.md](PHASE_4_REVIEW.md).
 
 ## Phase 5 — Reports, alerts, and summaries
 

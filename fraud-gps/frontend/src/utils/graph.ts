@@ -1,5 +1,5 @@
 import type { GraphData } from '../types';
-import { sameDataset } from './api';
+import { sameDataset } from './dataset';
 
 export function mergeGraphs(base: GraphData, extra: GraphData): GraphData {
   sameDataset(base.dataset_version, extra.dataset_version);

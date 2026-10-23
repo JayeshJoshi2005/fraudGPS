@@ -35,7 +35,12 @@ export function InspectorPanel({
   const label = (accountId: string) =>
     catalog?.nodes.find((n) => n.data.id === accountId)?.data.label || accountId;
   return (
-    <aside className="inspector panel" aria-label="Inspector">
+    <section
+      className="account-inspector"
+      role="tabpanel"
+      id="account-panel"
+      aria-labelledby="account-tab"
+    >
       <div className="panel-heading">
         <ScanSearch size={17} />
         <h2>Evidence inspector</h2>
@@ -60,7 +65,32 @@ export function InspectorPanel({
         </div>
       ) : (
         <div className="inspector-body">
-          {edge ? (
+          {edge?.kind === 'entity_link' ? (
+            <>
+              <p className="eyebrow">SHARED IDENTIFIER LINK</p>
+              <h3 className="mono">{edge.id}</h3>
+              <p className="filter-note">
+                These accounts share source identifiers. This line does not represent a money
+                transfer.
+              </p>
+              <dl className="details-grid">
+                <dt>Current account</dt>
+                <dd>
+                  {label(edge.source)}
+                  <small>{edge.source}</small>
+                </dd>
+                <dt>Peer account</dt>
+                <dd>
+                  {label(edge.target)}
+                  <small>{edge.target}</small>
+                </dd>
+                <dt>Entity evidence</dt>
+                <dd>{edge.entity_ids.join(', ')}</dd>
+                <dt>Other complaints</dt>
+                <dd>{edge.complaint_ids.join(', ')}</dd>
+              </dl>
+            </>
+          ) : edge ? (
             <>
               <p className="eyebrow">TRANSFER DETAILS</p>
               <h3 className="mono">{edge.id}</h3>
@@ -196,6 +226,6 @@ export function InspectorPanel({
           )}
         </div>
       )}
-    </aside>
+    </section>
   );
 }

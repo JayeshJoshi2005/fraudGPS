@@ -102,6 +102,48 @@ def trace(dataset, **options):
     return FraudGPS(GraphBuilder(dataset)).trace_money_trail(account_id(1), "seed", **options)
 
 
+def test_story_statistics_measure_forwarding_and_deduplicate_endpoints(independent_dataset):
+    dataset = independent_dataset(
+        [
+            ("seed", 1, 2, "1000.01", 0),
+            ("first", 2, 3, "400.00", 2),
+            ("second", 2, 3, "600.01", 3),
+        ]
+    )
+    service = AnalysisService(dataset)
+    result = service.trace(TraceRequest(complaint_id=CASE))
+    stats = result.statistics
+    assert result.metrics.hop_volume == Decimal("2000.02")
+    assert result.metrics.seed_amount == Decimal("1000.01")
+    assert stats.fastest_forward_minutes == 2
+    assert stats.transfer_duration_seconds == 180
+    assert stats.probable_endpoint_account_ids == [account_id(3)]
+    assert len([event for event in result.detections if event.type == "terminal"]) == 2
+    assert stats.other_linked_complaint_ids == []
+
+
+@pytest.mark.parametrize("minimum,transactions", [("0", 1), ("1001", 0)])
+def test_empty_and_single_transfer_story_statistics(independent_dataset, minimum, transactions):
+    service = AnalysisService(independent_dataset([("seed", 1, 2, 1000, 0)]))
+    result = service.trace(TraceRequest(complaint_id=CASE, min_amount=minimum))
+    assert len(result.steps) == transactions
+    assert result.statistics.fastest_forward_minutes is None
+    assert result.statistics.transfer_duration_seconds == 0
+    assert result.statistics.other_linked_complaint_ids == []
+    assert result.statistics.probable_endpoint_account_ids == (
+        [account_id(2)] if transactions else []
+    )
+
+
+def test_story_links_exclude_current_case_and_are_unique(independent_dataset):
+    service = AnalysisService(independent_dataset([("seed", 1, 2, 1000, 0)]))
+    # Membership represents the source-derived default trails, separate from DNA.
+    for account in (account_id(1), account_id(2)):
+        service.risk.membership[account].update({CASE, "BH-2026-9002"})
+    result = service.trace(TraceRequest(complaint_id=CASE))
+    assert result.statistics.other_linked_complaint_ids == ["BH-2026-9002"]
+
+
 def assert_conserved(trail):
     assert trail.metrics.seed_amount == trail.metrics.retained_amount + trail.metrics.stopped_amount
     assert sum((b.amount for b in trail.balances), Decimal(0)) == trail.metrics.seed_amount

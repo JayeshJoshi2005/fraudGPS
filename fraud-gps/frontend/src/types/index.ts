@@ -1,3 +1,4 @@
+import type { EntityLinkEdge } from './dna';
 export type Money = string;
 export type Role =
   'Victim' | 'Collector' | 'Splitter' | 'Layering Node' | 'Hub' | 'Cash-Out' | 'Bridge' | 'Normal';
@@ -47,7 +48,7 @@ export interface GraphEdge {
 export interface GraphData {
   dataset_version: string;
   nodes: { data: GraphNode }[];
-  edges: { data: GraphEdge }[];
+  edges: { data: GraphEdge | EntityLinkEdge }[];
 }
 export interface Allocation {
   amount: Money;
@@ -75,6 +76,22 @@ export interface Detection {
   amount: Money;
   description: string;
   metrics: Record<string, string | number>;
+  outputs: { transaction_id: string; to_account: string; attributed_amount: Money }[];
+}
+export interface TimelineEvent extends Detection {
+  step: number;
+}
+export interface TimelineData {
+  dataset_version: string;
+  events: TimelineEvent[];
+}
+export type PlaybackSpeed = 0.5 | 1 | 2 | 3;
+export interface PlaybackState {
+  mode: 'overview' | 'story';
+  step: number;
+  playing: boolean;
+  speed: PlaybackSpeed;
+  revision: number;
 }
 export interface TraceResult {
   dataset_version: string;
@@ -83,6 +100,13 @@ export interface TraceResult {
   options: TraceOptions;
   steps: TrailStep[];
   detections: Detection[];
+  balances: {
+    account_id: string;
+    receipt_tx_id: string;
+    amount: Money;
+    reason: string;
+    stopping_tx_id: string | null;
+  }[];
   metrics: {
     seed_amount: Money;
     hop_volume: Money;
@@ -97,6 +121,12 @@ export interface TraceResult {
   summary: string;
   summary_transaction_ids: string[];
   warnings: string[];
+  statistics: {
+    probable_endpoint_account_ids: string[];
+    fastest_forward_minutes: number | null;
+    transfer_duration_seconds: number;
+    other_linked_complaint_ids: string[];
+  };
 }
 export interface RiskResult {
   dataset_version: string;

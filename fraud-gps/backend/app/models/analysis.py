@@ -100,6 +100,13 @@ class Role(BaseModel):
     reasons: list[str]
 
 
+class TrailStatistics(BaseModel):
+    probable_endpoint_account_ids: list[str]
+    fastest_forward_minutes: float | None
+    transfer_duration_seconds: float
+    other_linked_complaint_ids: list[str]
+
+
 class TraceResult(BaseModel):
     dataset_version: str
     complaint_id: str | None
@@ -114,6 +121,7 @@ class TraceResult(BaseModel):
     summary: str = ""
     summary_transaction_ids: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    statistics: TrailStatistics | None = None
 
 
 class RiskResult(BaseModel):

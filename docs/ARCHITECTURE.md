@@ -2,7 +2,7 @@
 
 ## Status and intent
 
-Phases 0–2 implement configuration, schemas, data access, synthetic generation, graph projections, chronological tracing, risk, explanations, summaries, investigation APIs, and the React/TypeScript investigation UI. DNA, reports, and playback remain later phases. Analysis is independent of HTTP, UI, storage format, hosting provider, and coding assistant.
+Phases 0–4 implement configuration, schemas, data access, synthetic generation, graph projections, chronological tracing, risk, explanations, summaries, investigation APIs, the React/TypeScript investigation UI, timeline playback, and source-derived Fraud DNA/campaign matching. Reports remain a later phase. Analysis is independent of HTTP, UI, storage format, hosting provider, and coding assistant.
 
 ## Components and data flow
 
@@ -27,7 +27,7 @@ flowchart LR
 - `engines/graph_builder.py`: transaction and entity graph projections, indices, and neighborhood queries.
 - `engines/fraud_gps.py`: chronological trace and structural/temporal detections; retain transaction evidence, traversal limits, and reasons.
 - `engines/risk_scorer.py`: normalized features, explicit weights, bounded scores, and cache lifecycle.
-- `engines/fraud_dna.py`: cross-case entity, behavioral, and topology comparisons; independent from base risk to avoid circular dependencies.
+- `engines/fraud_dna.py`: implemented cross-case entity, behavioral, and topology comparisons, weighted signatures, inferred families, and factual identifier relations; independent from base risk to avoid circular dependencies. Bounded option-context caches belong to one dataset-scoped instance; `models/dna.py` holds the public contracts.
 - `engines/explainer.py`: text and recommendations derived from structured evidence; shared by UI summaries and reports.
 - `engines/service.py`: implemented dataset-scoped orchestration. Builds default complaint traces and cached risk results; renders the same trace into summaries, graphs, and timeline events. Recommendations remain Phase 5.
 - `routes/`: input validation, status codes, and response serialization. Keep reusable calculations outside routes, including report assembly as it grows.
@@ -44,15 +44,32 @@ and transfers. `GraphCanvas` is loaded separately to keep the initial bundle sma
 Changing complaint or trace options clears previous evidence, expansion, selection,
 and requests. See [Phase 2 contract](PHASE_2_CONTRACT.md) for search and view semantics.
 
-Playback remains Phase 3 and will consume backend events, deriving visible state
-from the current step. The current timeline strip presents the transfer time range
-and clearly disables playback.
+Phase 3 adds `useTimeline` for independently retriable, cancellable timeline requests
+and version/evidence checks. `usePlayback` owns event cadence, control state, and tab
+visibility cleanup. Pure `utils/playback.ts` projects the event prefix; `GraphCanvas`
+applies its classes without changing the graph topology. `graphAnimations` owns
+cancellable transient effects. `StoryOverlay` tracks rendered node positions for
+role labels and floating cards. `TimelineBar` and the sidebar dispatch the same
+playback actions. Source-derived trail statistics are shared in trace responses.
+See [Phase 3 contract](PHASE_3_CONTRACT.md) for step and pause semantics.
+
+Phase 4 adds `useDNA` for separately retriable/cancellable reports, `types/dna.ts`,
+pure source/score/provenance validation in `utils/dna.ts`, and Account Inspector/
+Fraud DNA tabs. `DNAPanel` renders masked evidence, inferred families, matching
+strength, behavior/topology, and real case/account navigation. `GraphData` has a
+discriminated transaction/entity-link edge union; existing backend transaction
+graph endpoints remain transaction-only. DNA report graphs carry separate relation
+edges with no financial fields. Merge preserves original attributed transfers and
+roles. Source relation inspection, filtering, highlight, hide/show, layout, and
+replay honor edge kind. The pure dataset-version helper is shared by API, graph,
+and DNA validation without importing browser HTTP configuration into tests.
+See [Phase 4 contract](PHASE_4_CONTRACT.md) for inference and cache rules.
 
 ## Contract rules
 
 Phase 1 rules are finalized in [PHASE_1_CONTRACT.md](PHASE_1_CONTRACT.md) and the
 [API guide](../fraud-gps/backend/API.md). The table below summarizes boundaries;
-DNA fields remain proposed for Phase 4.
+DNA contracts are finalized in [PHASE_4_CONTRACT.md](PHASE_4_CONTRACT.md).
 
 | Concern | Rule |
 | --- | --- |
@@ -78,10 +95,10 @@ Tracing uses a bounded chronological FIFO attribution hypothesis with explicit p
 | 1 | `GET /api/graph/full`; `/api/graph/subgraph/{account_id}`; `/api/graph/trail/{complaint_id}`; `/api/timeline/{complaint_id}` |
 | 1 | `GET /api/complaints`; `/api/complaints/{complaint_id}` — moved earlier as the Phase 2 prerequisite |
 | 2 (implemented prerequisite) | `GET /api/accounts/{account_id}` — source details and measured inspector statistics |
-| 4 | `GET /api/dna/campaigns`; `/api/dna/entity/{account_id}`; `/api/dna/{complaint_id}` |
+| 4 (implemented) | `GET /api/dna/campaigns`; `/api/dna/entity/{account_id}`; `/api/dna/{complaint_id}` |
 | 5 | `POST /api/report/{complaint_id}` returning a downloadable PDF |
 
-Phase 1 endpoints are implemented, with `/risk/top` declared before the dynamic account route. Trace depth, minimum amount, windows, and summary exposure are defined in the API guide. DNA and report endpoints remain reserved; declare `/dna/campaigns` before dynamic IDs when implementing Phase 4.
+Phase 1 endpoints are implemented, with `/risk/top` declared before the dynamic account route. Trace depth, minimum amount, windows, and summary exposure are defined in the API guide. DNA endpoints are implemented with `/dna/campaigns` and `/dna/entity/{account_id}` before the dynamic complaint route. Report endpoints remain reserved for Phase 5.
 
 ## Local operation and future portability
 

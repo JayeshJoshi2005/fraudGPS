@@ -43,6 +43,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_credentials=False,
         allow_methods=["GET", "POST"],
         allow_headers=["Content-Type"],
+        expose_headers=["X-Dataset-Version"],
     )
     for module in (trace, risk, dna, graph, report, timeline, complaints, accounts):
         application.include_router(module.router)

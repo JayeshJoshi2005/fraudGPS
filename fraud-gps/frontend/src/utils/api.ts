@@ -1,12 +1,14 @@
 import axios from 'axios';
+import type { DNAReport, EntityDNA, CampaignList } from '../types/dna';
 import type {
   AccountDetail,
   Complaint,
-  Detection,
   GraphData,
   RiskResult,
   TraceOptions,
   TraceResult,
+  TimelineData,
+  TimelineEvent,
 } from '../types';
 
 export const api = axios.create({
@@ -56,13 +58,20 @@ export const fetchNeighborhood = async (id: string, signal: AbortSignal) =>
       params: { depth: 1 },
     })
   ).data;
-export const fetchTimeline = async (id: string, options: TraceOptions, signal: AbortSignal) =>
-  (
-    await api.get<(Detection & { step: number })[]>(`/timeline/${encodeURIComponent(id)}`, {
-      signal,
-      params: options,
-    })
-  ).data;
+export async function fetchTimeline(
+  id: string,
+  options: TraceOptions,
+  signal: AbortSignal,
+): Promise<TimelineData> {
+  const response = await api.get<TimelineEvent[]>(`/timeline/${encodeURIComponent(id)}`, {
+    signal,
+    params: options,
+  });
+  const version = response.headers['x-dataset-version'];
+  if (typeof version !== 'string' || !version)
+    throw new Error('The timeline has no dataset version. Restart the backend and retry.');
+  return { dataset_version: version, events: response.data };
+}
 export const fetchTopRisks = async (limit: number, signal: AbortSignal) =>
   (await api.get<RiskResult[]>('/risk/top', { signal, params: { limit } })).data;
 export function errorMessage(error: unknown): string {
@@ -73,7 +82,12 @@ export function errorMessage(error: unknown): string {
     );
   return error instanceof Error ? error.message : 'The request could not be completed.';
 }
-export function sameDataset(...versions: string[]) {
-  if (new Set(versions).size > 1)
-    throw new Error('The dataset changed. Reload the workspace to continue.');
-}
+export { sameDataset } from './dataset';
+
+export const fetchDNAReport = async (id: string, options: TraceOptions, signal: AbortSignal) =>
+  (await api.get<DNAReport>(`/dna/${encodeURIComponent(id)}`, { params: options, signal })).data;
+export const fetchEntityDNA = async (id: string, options: TraceOptions, signal: AbortSignal) =>
+  (await api.get<EntityDNA>(`/dna/entity/${encodeURIComponent(id)}`, { params: options, signal }))
+    .data;
+export const fetchCampaigns = async (options: TraceOptions, signal: AbortSignal) =>
+  (await api.get<CampaignList>('/dna/campaigns', { params: options, signal })).data;

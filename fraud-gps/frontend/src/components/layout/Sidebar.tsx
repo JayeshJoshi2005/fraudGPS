@@ -1,7 +1,8 @@
-import { ArrowRight, Dna, FolderSearch, SlidersHorizontal } from 'lucide-react';
-import type { Complaint, GraphData, TraceOptions, ViewMode } from '../../types';
+import { ArrowRight, Dna, FolderSearch, SlidersHorizontal, Pause, RotateCcw } from 'lucide-react';
+import type { Complaint, GraphData, TraceOptions, TraceResult, ViewMode } from '../../types';
 import { formatCurrency, formatDate, maskAccount } from '../../utils/formatters';
 import { Badge, Loading } from '../common/Status';
+import { TrailStats } from '../cards/TrailStats';
 
 interface Props {
   complaints: Complaint[];
@@ -17,6 +18,12 @@ interface Props {
   onSuspicious: (value: boolean) => void;
   view: ViewMode;
   onView: (view: ViewMode) => void;
+  trace?: TraceResult;
+  replayReady: boolean;
+  playing: boolean;
+  onReplay: () => void;
+  onDNA: () => void;
+  dnaLoading: boolean;
 }
 export function Sidebar(p: Props) {
   const victim = p.catalog?.nodes.find((n) => n.data.id === p.selected?.victim_account)?.data;
@@ -25,7 +32,6 @@ export function Sidebar(p: Props) {
       <div className="panel-heading">
         <FolderSearch size={17} />
         <h2>Case workspace</h2>
-        <span className="step-number">01</span>
       </div>
       <div className="panel-body">
         <label className="field-label" htmlFor="complaint">
@@ -61,7 +67,10 @@ export function Sidebar(p: Props) {
               <span>{p.selected.scam_type}</span>
               <span>{formatDate(p.selected.complaint_date)}</span>
             </div>
-            <p className="case-description">{p.selected.description}</p>
+            <details className="case-description">
+              <summary>Complaint details</summary>
+              <p>{p.selected.description}</p>
+            </details>
           </article>
         ) : (
           <p className="muted">Select a case to begin investigating its money trail.</p>
@@ -79,9 +88,23 @@ export function Sidebar(p: Props) {
             </>
           )}
         </button>
-        <button className="dna-button" disabled title="Cross-case DNA matching arrives in Phase 4">
-          <Dna size={17} />
-          Find Linked Cases <small>Phase 4</small>
+        <button className="replay-button" disabled={!p.replayReady} onClick={p.onReplay}>
+          {p.playing ? <Pause size={16} /> : <RotateCcw size={16} />}
+          {p.playing ? 'Pause replay' : 'Replay Trail'}
+        </button>
+        <button
+          className="dna-button"
+          disabled={!p.trace?.steps.length || p.dnaLoading}
+          onClick={p.onDNA}
+        >
+          {p.dnaLoading ? (
+            <Loading>Comparing DNA…</Loading>
+          ) : (
+            <>
+              <Dna size={17} />
+              Find Linked Cases
+            </>
+          )}
         </button>
         <div className="section-title">
           <SlidersHorizontal size={15} />
@@ -143,12 +166,18 @@ export function Sidebar(p: Props) {
           {p.view === 'Cluster'
             ? 'Groups accounts by bank. These groups are not inferred fraud campaigns.'
             : p.view === 'Route'
-              ? 'Directed layers reveal the route through accounts. Each edge remains a distinct transfer.'
+              ? 'Follow transfers from left to right. Each arrow is a distinct transaction.'
               : 'Explore connections with a force-directed layout.'}
         </p>
         <p className="filter-note">
           Depth and amount changes clear the previous trail. Select Trace Funds to apply.
         </p>
+        {p.trace && (
+          <details className="trail-details">
+            <summary>Full trail statistics</summary>
+            <TrailStats trace={p.trace} />
+          </details>
+        )}
       </div>
       <div className="sidebar-footer">
         <span className="status-dot" />

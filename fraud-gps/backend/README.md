@@ -1,4 +1,4 @@
-# Fraud GPS Backend — Analysis and inspector APIs
+# Fraud GPS Backend — Analysis, inspector, and Fraud DNA APIs
 
 ## Prerequisites and setup
 
@@ -56,6 +56,6 @@ From this directory:
 .\.venv\Scripts\python.exe smoke_api.py
 ```
 
-The `.pytest-tmp` directory is disposable test output. The 82 tests cover data integrity, reproducibility, alternate datasets, exact money, malformed records, startup, CORS, chronological tracing, cycles, splits/merges, layering, amount/time bounds, risk evidence, cache isolation, API agreement, and Phase 2 account details/forwarding statistics. No coverage percentage is mandated. Format changes using `python -m ruff format .` from the virtual environment. The smoke script starts a temporary loopback Uvicorn server on an available port, waits for readiness, checks all Phase 1 endpoints, and stops that server.
+The `.pytest-tmp*` directories are disposable test output. The 107 tests cover data integrity, reproducibility, alternate datasets, exact money, malformed records, startup, CORS, chronological tracing, cycles, splits/merges, layering, amount/time bounds, risk evidence, cache isolation, API agreement, account details/forwarding statistics, timeline integrity, trail statistics, and Phase 4 source-derived DNA/campaigns/nonfinancial links. No coverage percentage is mandated. Format changes using `python -m ruff format .` from the virtual environment. The smoke script starts a temporary loopback Uvicorn server on an available port, waits for readiness, checks all Phase 1 endpoints, and stops that server.
 
-Phases 1 and 2 are verified; see the [Phase 2 review](../../docs/PHASE_2_REVIEW.md), [frontend guide](../frontend/README.md), and [analysis contract](../../docs/PHASE_1_CONTRACT.md). Tracing is a bounded FIFO attribution hypothesis, and risk scores are explainable heuristics. The frontend now uses `GET /api/accounts/{account_id}` for source details and observed statistics. DNA, PDF reports, and playback UI remain later phases. Phase 3 requires explicit user direction.
+Phases 1–4 are verified; see the [Phase 4 review](../../docs/PHASE_4_REVIEW.md), [frontend guide](../frontend/README.md), and [DNA contract](../../docs/PHASE_4_CONTRACT.md). Tracing is a bounded FIFO attribution hypothesis, and risk/DNA scores are explainable heuristics. DNA compares the same trace options across all cases, excludes self, masks display identifiers, and computes neutral inferred families without generator truth or prepared scores. New dataset/service instances invalidate option-context caches. Identifier relations are separate from money transfers. PDF reports remain Phase 5 and require explicit user direction.

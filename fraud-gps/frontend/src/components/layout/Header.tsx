@@ -107,9 +107,9 @@ export function Header({ complaints, nodes, ready, onCase, onAccount, onReload }
       >
         <RefreshCw size={15} />
       </button>
-      <button className="report-button" disabled title="Report generation is available in Phase 5">
+      <button className="report-button" disabled title="Reports are not available yet">
         <FileDown size={15} />
-        Generate Report<small>Phase 5</small>
+        Generate Report
       </button>
     </header>
   );

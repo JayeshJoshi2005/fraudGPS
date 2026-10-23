@@ -1,6 +1,7 @@
 """Dataset-scoped orchestration and serialization shared by all API consumers."""
 
 from app.engines.explainer import format_date, format_inr, generate_case_summary
+from app.engines.fraud_dna import FraudDNA
 from app.engines.fraud_gps import FraudGPS
 from app.engines.graph_builder import GraphBuilder
 from app.engines.risk_scorer import RiskScorer
@@ -15,6 +16,7 @@ from app.models.analysis import (
     TraceOptions,
     TraceRequest,
     TraceResult,
+    TrailStatistics,
 )
 from app.repository import Dataset
 
@@ -31,6 +33,17 @@ class AnalysisService:
         }
         self.risk = RiskScorer(self.graph, self.default_trails)
         self.risk.score_all_nodes()
+        self.dna = FraudDNA(self.graph, self.default_trails)
+
+    def dna_report(self, complaint_id: str, options: TraceOptions):
+        report = self.dna.compute_fraud_dna(complaint_id, options)
+        ids = {
+            account
+            for edge in report.link_graph.edges
+            for account in (edge.data.source, edge.data.target)
+        }
+        report.link_graph.nodes = self.serialize_graph(ids).nodes
+        return report
 
     def complaint(self, complaint_id: str):
         if complaint_id not in self.graph.complaints:
@@ -82,7 +95,46 @@ class AnalysisService:
         victim = self.graph.dataset.accounts_by_id[result.start_account]
         result.summary = generate_case_summary(result, complaint, victim)
         result.summary_transaction_ids = [s.tx_id for s in result.steps]
+        result.statistics = self.trail_statistics(result)
         return result
+
+    def trail_statistics(self, trail: TraceResult) -> TrailStatistics:
+        steps = {step.tx_id: step for step in trail.steps}
+        delays = [
+            (step.timestamp - steps[allocation.parent_tx_id].timestamp).total_seconds() / 60
+            for step in trail.steps
+            for allocation in step.allocations
+            if allocation.parent_tx_id in steps
+            and step.timestamp > steps[allocation.parent_tx_id].timestamp
+        ]
+        accounts = {trail.start_account} | {
+            account for step in trail.steps for account in (step.from_account, step.to_account)
+        }
+        linked = {
+            complaint_id for account in accounts for complaint_id in self.risk.membership[account]
+        } | {
+            complaint.complaint_id
+            for account in accounts
+            for complaint in self.graph.get_linked_complaints(account)
+        }
+        linked.discard(trail.complaint_id)
+        return TrailStatistics(
+            probable_endpoint_account_ids=sorted(
+                {
+                    account
+                    for event in trail.detections
+                    if event.type == "terminal"
+                    for account in event.account_ids
+                }
+            ),
+            fastest_forward_minutes=min(delays, default=None),
+            transfer_duration_seconds=(
+                (trail.steps[-1].timestamp - trail.steps[0].timestamp).total_seconds()
+                if trail.steps
+                else 0
+            ),
+            other_linked_complaint_ids=sorted(linked),
+        )
 
     def serialize_graph(self, account_ids=None, trail: TraceResult | None = None) -> GraphResult:
         ids = set(account_ids) if account_ids is not None else set(self.graph.graph.nodes)

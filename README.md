@@ -4,9 +4,13 @@ An interactive cyber-financial investigation platform for tracing money trails, 
 
 ## Current state
 
-**Phases 0–2 are implemented and verified.** The backend provides synthetic data, chronological tracing, risk, graphs, timelines, and complaint/account APIs. The React frontend supports case selection, search, filters, animated graph investigation, account/transfer inspection, and neighborhood expansion. Validation: 82 backend tests, 14 frontend tests, 9 live-browser tests, and a successful production build. Phase 3 requires a new request; hosting/cloud work remains deferred.
+**Phases 0–4 are implemented and verified.** The backend provides synthetic data, chronological tracing, risk, graphs, timelines, source-derived Fraud DNA, inferred campaign families, and complaint/account APIs. The React frontend supports investigation, inspection, story replay, and a Fraud DNA tab with masked identifier evidence, similar-case navigation, and distinct nonfinancial graph relations. Validation: 107 backend tests, 45 frontend tests, 25 live-browser tests against the production bundle, and a successful build. Phase 5 requires a new request; hosting/cloud work remains deferred.
 
-See the [frontend setup guide](fraud-gps/frontend/README.md), [backend setup guide](fraud-gps/backend/README.md), [API guide](fraud-gps/backend/API.md), and [Phase 2 review with screenshots](docs/PHASE_2_REVIEW.md).
+See the [frontend setup guide](fraud-gps/frontend/README.md), [backend setup guide](fraud-gps/backend/README.md), [API guide](fraud-gps/backend/API.md), and [Phase 4 review with screenshots](docs/PHASE_4_REVIEW.md).
+
+The subsequent [UI refinement](docs/UI_REFRESH_REVIEW.md) gives the graph more room,
+clearer labels and arrows, optional side panels, and responsive transaction routes.
+Its verification includes 49 frontend tests and 28 production-browser tests.
 
 ## Start here
 

@@ -37,10 +37,23 @@ def test_all_endpoints_and_evidence_agree(client):
     timeline_response = client.get(f"/api/timeline/{cid}")
     assert timeline_response.status_code == 200
     timeline = timeline_response.json()
+    assert timeline_response.headers["x-dataset-version"] == trace["dataset_version"]
+    cors = client.get(f"/api/timeline/{cid}", headers={"Origin": "http://localhost:3000"})
+    assert "X-Dataset-Version" in cors.headers["access-control-expose-headers"]
     assert {e["transaction_ids"][0] for e in timeline if e["type"] == "transfer"} == txids
     assert all(set(e["transaction_ids"]) <= txids for e in timeline)
     assert [e["step"] for e in timeline] == list(range(1, len(timeline) + 1))
     assert len({e["event_id"] for e in timeline}) == len(timeline)
+    assert [e["timestamp"] for e in timeline] == sorted(e["timestamp"] for e in timeline)
+    stats = trace["statistics"]
+    assert stats["other_linked_complaint_ids"] == sorted(set(stats["other_linked_complaint_ids"]))
+    assert cid not in stats["other_linked_complaint_ids"]
+    assert set(stats["probable_endpoint_account_ids"]) == {
+        account
+        for event in timeline
+        if event["type"] == "terminal"
+        for account in event["account_ids"]
+    }
     assert client.get(f"/api/timeline/{cid}").json() == timeline
     assert client.get(f"/api/complaints/{cid}").json()["trace"] == trace
     risk = client.get(f"/api/risk/{aid}")

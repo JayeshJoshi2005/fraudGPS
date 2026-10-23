@@ -52,7 +52,8 @@ describe('graph evidence integrity', () => {
       edges: [edge('a', 'victim', 'suspect', null), edge('parallel', 'victim', 'suspect', null)],
     });
     expect(merged.edges).toHaveLength(3);
-    expect(merged.edges.find((e) => e.data.id === 'a')?.data.attributed_amount).toBe('100');
+    const original = merged.edges.find((e) => e.data.id === 'a')?.data;
+    expect(original?.kind === 'transaction' && original.attributed_amount).toBe('100');
     expect(graph.edges).toHaveLength(2);
   });
   it('rejects mixed dataset versions', () =>

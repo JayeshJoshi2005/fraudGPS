@@ -34,3 +34,14 @@ export function formatTime(iso: string): string {
 export function maskAccount(label: string | undefined): string {
   return label && /^XXXX\d{4}$/.test(label) ? label : 'Unavailable';
 }
+
+export function formatMinutes(minutes: number | null): string {
+  if (minutes === null) return 'Not observed';
+  return minutes < 1 ? `${Math.round(minutes * 60)} sec` : `${Number(minutes.toFixed(1))} min`;
+}
+export function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${Number(seconds.toFixed(1))} sec`;
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  return hours ? `${hours} hr ${minutes % 60} min` : `${minutes} min`;
+}

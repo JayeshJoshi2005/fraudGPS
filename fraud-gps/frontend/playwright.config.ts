@@ -26,7 +26,7 @@ export default defineConfig({
       reuseExistingServer: false,
     },
     {
-      command: 'npm run start',
+      command: 'npm run preview',
       url: 'http://127.0.0.1:3000',
       timeout: 30000,
       reuseExistingServer: false,

@@ -16,9 +16,9 @@ async function trace(page: Page) {
   await page.getByRole('button', { name: 'Trace Funds', exact: true }).click();
   const result = (await (await response).json()) as TraceResult;
   await expect(page.locator('#network-canvas canvas').first()).toBeVisible();
-  await expect(
-    page.getByRole('region', { name: 'Trail statistics' }).or(page.getByLabel('Trail statistics')),
-  ).toContainText(String(result.metrics.transaction_count));
+  await expect(page.getByLabel('Trace overview')).toContainText(
+    String(result.metrics.transaction_count),
+  );
   return result;
 }
 async function clickNode(page: Page, id: string, button: 'left' | 'right' = 'left') {
@@ -43,9 +43,9 @@ test('real API investigation, graph interactions, inspector and screenshots', as
   await ready(page);
   await expect(page.getByRole('button', { name: /Generate Report/ })).toBeDisabled();
   await expect(page.getByRole('button', { name: /Find Linked Cases/ })).toBeDisabled();
-  await expect(page.getByRole('button', { name: /Playback/ })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Play timeline' })).toBeDisabled();
   await mkdir('../../docs/screenshots', { recursive: true });
-  await page.screenshot({ path: '../../docs/screenshots/phase2-ready.png' });
+  await page.screenshot({ path: '../../docs/screenshots/ui-refresh-ready.png' });
   const result = await trace(page);
   expect(result.options.max_depth).toBe(4);
   const count = await page
@@ -58,7 +58,7 @@ test('real API investigation, graph interactions, inspector and screenshots', as
   await expect(inspector.getByLabel('Risk assessment')).toBeVisible();
   await expect(inspector).toContainText(complaints[0].suspect_account);
   await page.mouse.move(20, 20);
-  await page.screenshot({ path: '../../docs/screenshots/phase2-inspector.png' });
+  await page.screenshot({ path: '../../docs/screenshots/ui-refresh-inspector.png' });
   const zoom = await page
     .locator('#network-canvas')
     .evaluate((el) => (el as GraphElement)._cyreg.cy.zoom());
@@ -202,7 +202,7 @@ test('small screen remains usable without horizontal overflow', async ({ page })
   await ready(page);
   await trace(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: '../../docs/screenshots/phase2-mobile.png', fullPage: true });
+  await page.screenshot({ path: '../../docs/screenshots/ui-refresh-mobile.png', fullPage: true });
 });
 
 test('delayed account evidence cannot replace a newer selection', async ({ page, request }) => {

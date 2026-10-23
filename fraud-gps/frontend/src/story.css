@@ -1,0 +1,422 @@
+.replay-button {
+  width: 100%;
+  margin-top: 9px;
+  border-color: #2b5575;
+  color: #94d8fc;
+  background: #112b40;
+  font-size: 11px;
+}
+.story-stats .section-title {
+  margin-top: 24px;
+}
+.story-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.story-stats-grid > div {
+  padding: 12px 9px;
+  background: #101f31;
+  border: 1px solid #273b52;
+  border-radius: 7px;
+  min-width: 0;
+}
+.story-stats-grid svg {
+  color: #73b4db;
+  margin-bottom: 5px;
+}
+.story-stats-grid span {
+  display: block;
+  font-size: 7px;
+  color: #8ba7c1;
+  letter-spacing: 0.7px;
+}
+.story-stats-grid strong {
+  display: block;
+  margin-top: 7px;
+  color: #e2efff;
+  font-size: 15px;
+  letter-spacing: -0.4px;
+  overflow-wrap: anywhere;
+}
+.stats-note {
+  margin-top: 10px;
+  color: #8098b1;
+  font-size: 9px;
+  line-height: 1.7;
+}
+.timeline-bar {
+  display: grid;
+  grid-template-columns: 225px minmax(0, 1fr) 210px;
+  gap: 22px;
+  padding: 4px 24px;
+  z-index: 15;
+}
+.playback-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.playback-controls button {
+  padding: 8px;
+  height: 34px;
+  margin: 0;
+  flex-shrink: 0;
+}
+.playback-controls .play-control {
+  color: #8dd9ff;
+  background: #173b55;
+  border-color: #356688;
+}
+.playback-controls select {
+  width: 61px;
+  padding: 6px 4px;
+  font-size: 10px;
+  height: 34px;
+}
+.timeline-content {
+  min-width: 0;
+}
+.timeline-content .error-state {
+  padding: 5px 8px;
+  max-width: none;
+  flex-wrap: nowrap;
+  font-size: 10px;
+}
+.timeline-content .error-state p {
+  min-width: 0;
+}
+.timeline-content .error-state button {
+  flex-shrink: 0;
+}
+.scrubber-wrap {
+  height: 24px;
+  position: relative;
+  margin: 0 5px;
+}
+.scrubber-wrap input {
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  position: relative;
+  z-index: 2;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+}
+.scrubber-wrap input::-webkit-slider-runnable-track {
+  height: 3px;
+  background: linear-gradient(to right, #38bdf8 var(--progress), #2d4562 var(--progress));
+  border-radius: 4px;
+  box-shadow: 0 0 9px #38bdf833;
+}
+.scrubber-wrap input::-moz-range-track {
+  height: 3px;
+  background: #2d4562;
+}
+.scrubber-wrap input::-moz-range-progress {
+  background: #38bdf8;
+  height: 3px;
+}
+.scrubber-wrap input::-webkit-slider-thumb {
+  appearance: none;
+  height: 11px;
+  width: 11px;
+  background: #b4eaff;
+  border: 2px solid #39bafb;
+  border-radius: 50%;
+  margin-top: -4px;
+  box-shadow: 0 0 11px #38bdf8aa;
+}
+.scrubber-wrap input::-moz-range-thumb {
+  height: 9px;
+  width: 9px;
+  background: #b4eaff;
+  border: 2px solid #39bafb;
+  border-radius: 50%;
+}
+.scrubber-wrap input:disabled {
+  opacity: 0.35;
+}
+.timeline-markers {
+  position: absolute;
+  inset: 0 5px;
+  pointer-events: none;
+  z-index: 3;
+}
+.timeline-markers .timeline-marker {
+  position: absolute;
+  top: 9px;
+  width: 5px;
+  height: 5px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #57748e;
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+.timeline-markers .timeline-marker.split {
+  background: #fbbf24;
+}
+.timeline-markers .timeline-marker.terminal {
+  background: #fb7185;
+}
+.timeline-markers .timeline-marker.passed {
+  box-shadow: 0 0 5px #7dd3fc;
+}
+.timeline-marker:hover {
+  outline: 3px solid #38bdf855;
+}
+.timeline-event-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  height: 23px;
+}
+.current-event-label {
+  font-size: 9px;
+  color: #99b3cb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
+}
+.current-event-label svg {
+  display: inline;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+.event-pills {
+  display: flex;
+  gap: 5px;
+}
+.event-pills button {
+  border-color: #294763;
+  color: #a6cce4;
+  border-radius: 10px;
+  font-size: 8px;
+  padding: 3px 7px;
+  white-space: nowrap;
+  margin: 0;
+}
+.timeline-position {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.timeline-position > strong {
+  font:
+    9px Consolas,
+    monospace;
+  letter-spacing: 0.8px;
+  color: #83cdef;
+}
+.timeline-position time {
+  font-size: 8px;
+  color: #9ab0c7;
+  white-space: nowrap;
+}
+.timeline-position .connection-status {
+  font-size: 7px;
+}
+.timeline-position .status-dot {
+  width: 4px;
+  height: 4px;
+}
+.role-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.node-role-label {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 8px;
+  font-weight: 600;
+  background: #0b1729e8;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  padding: 1px 4px;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.story-event-card {
+  position: absolute;
+  width: min(224px, calc(100% - 16px));
+  padding: 12px;
+  border: 1px solid #487899;
+  border-left: 3px solid #71cef4;
+  border-radius: 8px;
+  background: #111e30f5;
+  box-shadow: 0 10px 35px #0007;
+  z-index: 7;
+  pointer-events: none;
+  animation: story-card-in 0.22s ease-out;
+  color: #b1c6da;
+}
+.story-event-card.accent {
+  box-shadow:
+    0 0 22px #38bdf82b,
+    0 10px 35px #0007;
+}
+.story-event-card > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #9fdfff;
+  font-size: 11px;
+}
+.story-event-card p {
+  font-size: 9px;
+  line-height: 1.5;
+  margin-top: 6px;
+}
+.story-event-card .story-event-amount {
+  color: #eff8ff;
+  font-size: 13px;
+  font-weight: 600;
+}
+.story-event-card small {
+  display: block;
+  color: #8ca5c0;
+  margin-top: 5px;
+  font-size: 8px;
+}
+.story-event-card.split {
+  border-left-color: #fbbf24;
+}
+.story-event-card.split > div {
+  color: #fde68a;
+}
+.story-event-card.rapid_forward {
+  border-left-color: #fb923c;
+}
+.story-event-card.rapid_forward > div {
+  color: #fdba74;
+}
+.story-event-card.terminal {
+  border-left-color: #fb7185;
+}
+.story-event-card.terminal > div {
+  color: #fda4af;
+}
+.story-complete {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 30px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border: 1px solid #296653;
+  border-radius: 9px;
+  background: #102b29ef;
+  box-shadow: 0 8px 30px #0006;
+  pointer-events: none;
+}
+.story-complete svg {
+  color: #6ee7b7;
+  flex-shrink: 0;
+}
+.story-complete strong,
+.story-complete span,
+.story-complete small {
+  display: block;
+}
+.story-complete strong {
+  font-size: 13px;
+  color: #b6f6df;
+}
+.story-complete span {
+  font-size: 10px;
+  margin-top: 5px;
+  color: #aed3ca;
+}
+.story-complete small {
+  font-size: 8px;
+  color: #7fa69b;
+  margin-top: 4px;
+}
+@keyframes story-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 1250px) {
+  .timeline-bar {
+    grid-template-columns: 225px minmax(0, 1fr) 170px;
+    gap: 14px;
+    padding-inline: 16px;
+  }
+  .event-pills {
+    display: none;
+  }
+}
+@media (max-width: 950px) {
+  .timeline-bar {
+    grid-template-columns: 225px minmax(0, 1fr);
+    gap: 8px 16px;
+    padding: 14px 16px;
+  }
+  .timeline-content {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .timeline-position {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .event-pills {
+    display: flex;
+  }
+  .playback-controls button {
+    margin: 0;
+  }
+}
+@media (max-width: 600px) {
+  .timeline-bar {
+    grid-template-columns: 1fr;
+  }
+  .playback-controls {
+    justify-content: center;
+  }
+  .timeline-position {
+    grid-column: 1;
+    grid-row: 3;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .timeline-content {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .event-pills {
+    display: none;
+  }
+  .story-event-card {
+    padding: 10px;
+  }
+  .story-complete {
+    padding: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .story-event-card {
+    animation: none;
+  }
+}

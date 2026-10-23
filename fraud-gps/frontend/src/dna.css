@@ -1,0 +1,495 @@
+.account-inspector {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+.inspector-tabs {
+  display: flex;
+  flex-shrink: 0;
+  padding: 8px 10px 0;
+  gap: 6px;
+  border-bottom: 1px solid #28334c;
+  background: #111925;
+}
+.inspector-tabs button {
+  flex: 1;
+  padding: 11px 5px;
+  border: 0;
+  border-radius: 5px 5px 0 0;
+  background: transparent;
+  color: #849bb8;
+  font-size: 12px;
+}
+.inspector-tabs button[aria-selected='true'] {
+  color: #e4eefa;
+  background: #1b293b;
+  box-shadow: inset 0 -2px #7cc8f5;
+}
+.dna-button:not(:disabled) {
+  color: #e0c7ff;
+  border-color: #62477e;
+  background: #2a2441;
+}
+.dna-panel {
+  overflow: auto;
+  min-height: 0;
+  padding: 20px 17px;
+  flex: 1;
+}
+.dna-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #ceabfa;
+  margin-bottom: 20px;
+}
+.dna-heading h2 {
+  font-size: 17px;
+  font-weight: 600;
+  margin-top: 5px;
+  color: #eee3ff;
+}
+.dna-heading .eyebrow {
+  font-size: 7px;
+  letter-spacing: 1.6px;
+  color: #9481b5;
+}
+.dna-status,
+.dna-empty {
+  padding: 35px 0;
+  text-align: center;
+}
+.dna-status p,
+.dna-empty p {
+  color: #8b9fbb;
+  font-size: 11px;
+  line-height: 1.8;
+  margin: 14px 0;
+}
+.dna-empty > svg {
+  color: #ad88d4;
+  margin: 0 auto 20px;
+}
+.dna-empty h3 {
+  font-size: 16px;
+  color: #d3b8f6;
+}
+.dna-empty small {
+  display: block;
+  font-size: 9px;
+  color: #8f9bb0;
+  margin-top: 13px;
+}
+.dna-signature {
+  text-align: center;
+  padding: 0 0 18px;
+}
+.signature-ring {
+  width: 138px;
+  height: 138px;
+  padding: 7px;
+  border-radius: 50%;
+  margin: 0 auto;
+  box-shadow: 0 0 25px #a855f715;
+}
+.signature-ring > div {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #111b2d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+}
+.signature-ring strong {
+  color: #e4c1ff;
+  font-size: 29px;
+  font-weight: 600;
+  letter-spacing: -1px;
+}
+.signature-ring span {
+  font-size: 7px;
+  letter-spacing: 1.2px;
+  color: #ae8fce;
+}
+.dna-signature > p {
+  font-size: 10px;
+  color: #d2c4eb;
+  margin-top: 13px;
+}
+.dna-signature > small {
+  display: block;
+  color: #8e9ab3;
+  font-size: 9px;
+  margin-top: 6px;
+}
+.dna-components {
+  padding: 14px 10px;
+  background: #151e33;
+  border: 1px solid #32344d;
+  border-radius: 7px;
+}
+.dna-components > div {
+  display: grid;
+  grid-template-columns: 75px 1fr 43px;
+  gap: 7px;
+  align-items: center;
+  padding: 5px 0;
+}
+.dna-components label {
+  font-size: 9px;
+  text-transform: capitalize;
+  color: #b8c3d6;
+}
+.dna-components small {
+  display: block;
+  font-size: 7px;
+  color: #8190a8;
+  margin-top: 3px;
+}
+.dna-components strong {
+  font-size: 9px;
+  color: #d0a7f8;
+  text-align: right;
+}
+.dna-components meter {
+  width: 100%;
+  height: 6px;
+  appearance: none;
+  border: 0;
+  background: #29354b;
+  border-radius: 5px;
+}
+.dna-components meter::-webkit-meter-bar {
+  height: 6px;
+  border: 0;
+  background: #29354b;
+}
+.dna-components meter::-webkit-meter-optimum-value {
+  background: #ba83ec;
+}
+.dna-components meter::-moz-meter-bar {
+  background: #ba83ec;
+}
+.dna-family {
+  margin-top: 17px;
+  padding: 14px 12px;
+  border: 1px solid #594272;
+  border-left: 3px solid #bd87ef;
+  background: linear-gradient(115deg, #29233c, #172136);
+  border-radius: 6px;
+}
+.dna-family .eyebrow {
+  font-size: 7px;
+  color: #af95ca;
+  letter-spacing: 1.1px;
+}
+.dna-family h3 {
+  margin-top: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #e2ccff;
+}
+.dna-family p {
+  margin-top: 8px;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #bfc2dc;
+}
+.dna-family small {
+  color: #8c91ad;
+  font-size: 8px;
+  display: block;
+  margin-top: 5px;
+}
+.dna-family details {
+  margin-top: 10px;
+  color: #b0a1c6;
+  font-size: 9px;
+}
+.dna-case-id {
+  display: inline-block;
+  font:
+    8px Consolas,
+    monospace;
+  margin: 6px 8px 0 0;
+}
+.dna-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 24px 0 10px;
+  color: #b999df;
+}
+.dna-section-heading h3 {
+  color: #d8dfec;
+  font-size: 12px;
+  font-weight: 500;
+}
+.dna-section-heading > span {
+  margin-left: auto;
+  font:
+    10px Consolas,
+    monospace;
+  color: #b99bda;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #292840;
+}
+.dna-caption,
+.dna-empty-note {
+  color: #8b9bb6;
+  font-size: 9px;
+  line-height: 1.7;
+  margin: 10px 0;
+}
+.entity-match {
+  margin-top: 8px;
+  border: 1px solid #303750;
+  border-radius: 7px;
+  background: #131e31;
+  overflow: hidden;
+}
+.entity-match.active {
+  border-color: #a67bd1;
+  background: #21253d;
+}
+.entity-match-toggle {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 12px 10px;
+  align-items: flex-start;
+}
+.entity-match-toggle > svg {
+  color: #b38dd9;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+.entity-match-toggle > span {
+  min-width: 0;
+}
+.entity-match-toggle strong {
+  font-size: 11px;
+  font-weight: 500;
+  color: #d9c4f3;
+  overflow-wrap: anywhere;
+}
+.entity-match-toggle small {
+  display: block;
+  font-size: 8px;
+  margin-top: 5px;
+  color: #8fa0b8;
+}
+.entity-evidence {
+  padding: 0 10px 12px;
+  border-top: 1px solid #393855;
+}
+.entity-evidence p {
+  margin: 12px 0 6px;
+  font-size: 9px;
+  color: #c8b4e0;
+}
+.entity-evidence > button {
+  font-size: 10px;
+  padding: 5px 7px;
+  margin: 2px;
+}
+.entity-evidence button small {
+  display: block;
+  font:
+    8px Consolas,
+    monospace;
+}
+.entity-evidence > small {
+  display: block;
+  color: #98a1b7;
+  font-size: 8px;
+  line-height: 1.6;
+  margin-top: 10px;
+}
+.entity-case-list {
+  max-height: 140px;
+  overflow: auto;
+}
+.entity-case-list button {
+  margin: 3px 2px;
+  padding: 5px;
+  font:
+    8px Consolas,
+    monospace;
+}
+.dna-more {
+  width: 100%;
+  font-size: 10px;
+  color: #c1a2e0;
+  padding: 7px;
+  margin-top: 9px;
+}
+.dna-similar-cases > button {
+  display: flex;
+  width: 100%;
+  padding: 12px 10px;
+  justify-content: space-between;
+  gap: 7px;
+  text-align: left;
+  background: #142034;
+  margin-top: 7px;
+}
+.dna-similar-cases strong {
+  font:
+    10px Consolas,
+    monospace;
+  color: #d0daef;
+}
+.dna-similar-cases small {
+  display: block;
+  font-size: 8px;
+  margin-top: 6px;
+  color: #889db7;
+}
+.similarity-value {
+  font-size: 12px;
+  color: #d2abff;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.dna-fingerprint {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 13px 8px;
+  font-size: 10px;
+  margin-top: 13px;
+}
+.dna-fingerprint dt {
+  color: #8da4c0;
+  text-transform: capitalize;
+}
+.dna-fingerprint dd {
+  text-align: right;
+  color: #c6d7ec;
+  overflow-wrap: anywhere;
+}
+.dna-fingerprint small {
+  display: block;
+  font-size: 8px;
+  color: #7c94af;
+  line-height: 1.6;
+  margin-top: 5px;
+}
+.dna-method {
+  margin-top: 23px;
+  font-size: 10px;
+  color: #b69ace;
+}
+.dna-method p,
+.dna-method > small {
+  display: block;
+  font-size: 9px;
+  line-height: 1.7;
+  margin-top: 13px;
+  color: #8d9bb4;
+}
+.dna-feature-row {
+  display: contents;
+}
+.dna-summary {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  max-width: calc(100% - 82px);
+  padding: 9px 12px;
+  border: 1px solid #59496c;
+  background: #1a2030;
+  border-radius: 6px;
+  z-index: 4;
+  animation: dna-fade-in 0.2s ease-out;
+}
+.dna-summary > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #c59aef;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.dna-summary > div span {
+  color: #c6b4df;
+  font-size: 11px;
+}
+.dna-summary > div button {
+  margin-left: auto;
+  padding: 3px;
+  background: transparent;
+  border: 0;
+}
+.dna-summary h3 {
+  font-size: 11px;
+  margin-top: 12px;
+  font-weight: 500;
+  color: #dfc8fa;
+}
+.dna-summary p {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 9px;
+  color: #a8b3ca;
+}
+.dna-summary p strong {
+  color: #d5b6fc;
+  font-weight: 600;
+}
+.dna-summary small {
+  display: block;
+  color: #8c88a7;
+  font-size: 8px;
+  margin-top: 4px;
+  line-height: 1.6;
+}
+.dna-legend {
+  color: #c5a3e9;
+}
+.dna-legend i {
+  width: 16px;
+  height: 0;
+  border-top: 2px dashed #c084fc;
+  border-radius: 0;
+  background: transparent;
+}
+@keyframes dna-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 950px) {
+  .dna-panel {
+    max-height: 620px;
+  }
+}
+@media (max-width: 600px) {
+  .dna-summary {
+    padding: 10px;
+  }
+  .dna-summary p {
+    font-size: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dna-summary {
+    animation: none;
+  }
+}

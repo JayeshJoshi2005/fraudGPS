@@ -1,17 +1,24 @@
 # Project Progress and Team Handoff
 
-Last updated: 22-Oct-2026.
+Last updated: 23-Oct-2026.
 
 ## Current state
 
-**Phase 2 implemented and verified**, authorized by "implement phase 2 correctly and completely".
-The React/TypeScript workspace connects to the real backend for complaint selection,
-tracing, interactive graph inspection, search, filtering, and neighborhood expansion.
-Validation: 82 backend tests, 14 frontend tests, 9 live browser tests, production build,
-Ruff, Prettier, dependency checks, and desktop/mobile screenshots. See
-[PHASE_2_REVIEW.md](PHASE_2_REVIEW.md) and [PHASE_2_CONTRACT.md](PHASE_2_CONTRACT.md).
-Phases 0 and 1 remain verified. Phase 3 awaits explicit direction; performance targets
-and hosted deployment remain deferred.
+The user subsequently requested a minimal UI and clearer graph visibility. The
+workspace now gives the graph more room, defaults to readable transaction routes,
+opens evidence on demand, and supports collapsible panels. See
+[UI_REFRESH_REVIEW.md](UI_REFRESH_REVIEW.md) for changes, screenshots, and validation.
+
+**Phase 4 implemented and verified**, authorized by "do phase 4 correctly" on
+23-Oct-2026. Entity/behavior/network DNA, exact weighted signatures, inferred
+families, source-linked APIs, masked evidence, inspector tabs, similar-case
+navigation, and distinct purple identifier relations are functional. Validation:
+**107 backend, 45 frontend, 25 production-browser tests**, build, Ruff, Prettier,
+unchanged dataset, and desktop/mobile screenshots. See [PHASE_4_REVIEW.md](PHASE_4_REVIEW.md)
+and [PHASE_4_CONTRACT.md](PHASE_4_CONTRACT.md).
+
+Phases 0–3 remain verified. Phase 5 awaits explicit direction. Performance targets,
+final demo rehearsals, and hosting remain deferred.
 
 `AGENTS.md` has been preserved. The PDF is currently named `requirements.pdf`; the guide's older `hjgj.pdf` reference is noted in the root README.
 
@@ -23,8 +30,8 @@ and hosted deployment remain deferred.
 | 0 | Scaffold, schemas, synthetic data | Verified | Codex implementation | [Phase 0 review](PHASE_0_REVIEW.md); 24 tests, Ruff, pip check, live HTTP smoke check |
 | 1 | Graphs, tracing, risk, base APIs | Verified | Codex | [Phase 1 review](PHASE_1_REVIEW.md); 80 tests, Ruff, pip check, 10 live endpoints |
 | 2 | Frontend and interactive graph | Verified | Codex | [Phase 2 review](PHASE_2_REVIEW.md); 82 backend + 14 frontend + 9 browser tests; screenshots |
-| 3 | Timeline and story mode | Not started | Unassigned | None |
-| 4 | Fraud DNA and linked cases | Not started | Unassigned | None |
+| 3 | Timeline and story mode | Verified | Codex | [Phase 3 review](PHASE_3_REVIEW.md); 86 backend + 30 frontend + 17 production-browser tests; screenshots |
+| 4 | Fraud DNA and linked cases | Verified | Codex | [Phase 4 review](PHASE_4_REVIEW.md); 107 backend + 45 frontend + 25 production-browser tests; screenshots |
 | 5 | Reports, alerts, summaries | Not started | Unassigned | None |
 | 6 | Polish, reliability, local demo | Not started | Unassigned | None |
 | Later | Hosting and cloud | Deferred | Unassigned | Outside current delivery scope |
@@ -33,10 +40,14 @@ Use statuses: `Not started`, `In progress`, `Blocked`, `Ready for review`, `Veri
 
 ## Task ownership and handoff format
 
-The user authorized Phases 0, 1, and 2 on 22-Oct-2026. The following rows record completed work; ownership for later phases remains unassigned.
+The user authorized Phases 0, 1, and 2 on 22-Oct-2026 and Phases 3 and 4 on 23-Oct-2026. The following rows record completed work; ownership for later phases remains unassigned.
 
 | Task / requirement ID | Phase | Owner | Status | Files / contract | Verification | Next action |
 | --- | --- | --- | --- | --- | --- | --- |
+| DNA-01 / source-derived comparison and families | 4 | Codex | Verified | `engines/fraud_dna.py`, `models/dna.py`, DNA routes/service; Phase 4 contract | Independent inference/cache/replacement tests; demo grouping and bounds; 107 backend tests | Review Phase 4; await Phase 5 direction |
+| DNA-01 / inspector and graph integration | 4 | Codex | Verified | `useDNA`, `DNAPanel`, typed client validation, inspector tabs, nonfinancial graph links | 45 unit + 25 production-browser tests; desktop/mobile screenshots | Preserve relation/transfer distinction |
+| PLAY-01 / timeline and story mode | 3 | Codex | Verified | `useTimeline`, `usePlayback`, pure prefix model, timeline controls, graph effects/overlays, statistics; Phase 3 contract | 30 unit + 17 production-browser tests; screenshots | Review Phase 3; await Phase 4 direction |
+| API-01 / timeline integrity and statistics | 3 | Codex | Verified | Timeline version header/CORS, typed trace statistics, AnalysisService | 86 backend tests; independent endpoint/forwarding/duration/link fixtures | Preserve shared statistics and evidence contracts |
 | UI-01 / investigation workspace | 2 | Codex | Verified | `frontend/src/`, typed API client, Vite/Tailwind, frontend guide | Build, 14 unit tests, 9 real-backend browser tests, screenshots | Review Phase 2 |
 | API-01 / inspector prerequisite | 2 | Codex | Verified | `routes/accounts.py`, account detail model/service and FIFO statistic | 82 backend tests, missing-account and observed forwarding checks | Preserve API contract |
 | GPS-01 / graphs and tracing | 1 | Codex | Verified | `graph_builder.py`, `fraud_gps.py`, analysis models, Phase 1 contract | Independent split/merge/cycle/chronology/limit tests and conservation across 50 demo trails | Review Phase 1 |
@@ -64,6 +75,8 @@ Before marking a phase verified, check its criteria in [PHASES.md](PHASES.md), a
 
 | Date | Change | Verification |
 | --- | --- | --- |
+| 23-Oct-2026 | Phase 4 authorized, implemented, and verified. No generator truth or prepared scores used. Stopped before Phase 5. | [Phase 4 review](PHASE_4_REVIEW.md); 107 backend, 45 frontend, 25 production-browser tests; source-derived families, build, formatting, unchanged data. |
+| 23-Oct-2026 | Phase 3 authorized, implemented, resumed after interruption, and verified. Stopped before Phase 4. | [Phase 3 review](PHASE_3_REVIEW.md); 86 backend, 30 frontend, 17 production-browser tests; build, formatting, screenshots, unchanged dataset hash. |
 | 22-Oct-2026 | Phase 2 authorized, implemented, and verified. Repaired local synthetic dataset ACL inheritance for normal-user startup. Stopped before Phase 3. | [Phase 2 review](PHASE_2_REVIEW.md); 82 backend, 14 frontend, 9 browser tests; production build and screenshots. |
 | 22-Oct-2026 | User authorized Phase 1; graphs, tracing, risk, explanations, and APIs implemented. Stopped before Phase 2. | [Phase 1 review](PHASE_1_REVIEW.md): 80 tests, lint/format, dependency check, 10 live HTTP endpoints. |
 | 22-Oct-2026 | Read requirements PDF visually and full phase prompts; created shared documentation and discrepancy register. | Repository inventory confirms application code is absent; documentation links checked. No application tests apply. |
