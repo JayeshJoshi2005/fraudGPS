@@ -1,0 +1,95 @@
+# Local Architecture
+
+## Status and intent
+
+Phases 0–2 implement configuration, schemas, data access, synthetic generation, graph projections, chronological tracing, risk, explanations, summaries, investigation APIs, and the React/TypeScript investigation UI. DNA, reports, and playback remain later phases. Analysis is independent of HTTP, UI, storage format, hosting provider, and coding assistant.
+
+## Components and data flow
+
+```mermaid
+flowchart LR
+    Generator[Synthetic generator] --> JSON[Local JSON datasets]
+    JSON --> Repository[Validated data access]
+    Repository --> Analysis[Graphs, tracing, risk, DNA]
+    Analysis --> Results[Shared analysis results and evidence]
+    Results --> API[FastAPI routes and schemas]
+    Results --> Reports[ReportLab reports]
+    Reports --> API
+    API --> Client[Typed frontend API client]
+    Client --> UI[React panels and playback state]
+    UI --> Graph[Cytoscape renderer]
+```
+
+### Backend boundaries
+
+- `models/schemas.py`: validated source records. `models/analysis.py`: typed Phase 1 requests, responses, evidence, exact money, and bounded scores.
+- `app/repository.py`: implemented JSON loading and validation, frozen records, read-only account/transaction indices, and dataset content hash. Future query helpers and database adapters should preserve this boundary. The loader does not consume the generator's campaign truth metadata.
+- `engines/graph_builder.py`: transaction and entity graph projections, indices, and neighborhood queries.
+- `engines/fraud_gps.py`: chronological trace and structural/temporal detections; retain transaction evidence, traversal limits, and reasons.
+- `engines/risk_scorer.py`: normalized features, explicit weights, bounded scores, and cache lifecycle.
+- `engines/fraud_dna.py`: cross-case entity, behavioral, and topology comparisons; independent from base risk to avoid circular dependencies.
+- `engines/explainer.py`: text and recommendations derived from structured evidence; shared by UI summaries and reports.
+- `engines/service.py`: implemented dataset-scoped orchestration. Builds default complaint traces and cached risk results; renders the same trace into summaries, graphs, and timeline events. Recommendations remain Phase 5.
+- `routes/`: input validation, status codes, and response serialization. Keep reusable calculations outside routes, including report assembly as it grows.
+
+Engines should accept data/context explicitly and return structured results without depending on FastAPI requests or frontend state. Load shared context during application startup. Key caches by dataset version and relevant query parameters; never reuse stale analysis after regeneration.
+
+### Frontend boundaries
+
+Implemented in Phase 2: `utils/api.ts` owns configurable Axios API access; `types/`
+owns client contracts; `useGraphData`, `useTrace`, and `useRisk` manage requests and
+cancellation. Components present results, and Cytoscape renders the backend's scores
+and transfers. `GraphCanvas` is loaded separately to keep the initial bundle smaller.
+`graphAnimations` owns cancellable timers and respects reduced-motion preferences.
+Changing complaint or trace options clears previous evidence, expansion, selection,
+and requests. See [Phase 2 contract](PHASE_2_CONTRACT.md) for search and view semantics.
+
+Playback remains Phase 3 and will consume backend events, deriving visible state
+from the current step. The current timeline strip presents the transfer time range
+and clearly disables playback.
+
+## Contract rules
+
+Phase 1 rules are finalized in [PHASE_1_CONTRACT.md](PHASE_1_CONTRACT.md) and the
+[API guide](../fraud-gps/backend/API.md). The table below summarizes boundaries;
+DNA fields remain proposed for Phase 4.
+
+| Concern | Rule |
+| --- | --- |
+| Identity | Stable internal account and transaction IDs; masking is display-only. Never use colliding last-four-digit labels as identity. |
+| Transactions | Preserve every transaction between account pairs using a multigraph or indexed transaction store plus graph projection. |
+| Money | Exact decimal/integer minor-unit arithmetic; specify API units explicitly. Avoid binary floating-point financial calculations. |
+| Time | Timezone-aware ISO timestamps internally; Asia/Kolkata display, `DD-MMM-YYYY`, Indian currency grouping. Fix seed and reference date for reproducibility. |
+| Trace | Return provenance transaction IDs, ordered steps, detected events, node roles, limits, and summary metrics. Specify chronology and attribution rules before coding. |
+| Graph | Cytoscape-compatible `nodes` and `edges`; each edge has a unique ID and explicit transaction/entity-link kind. No implied transfer on an entity edge. |
+| Risk | Score in [0,1], components, weights, level, role, confidence, evidence, and explanations. Define level boundaries centrally. |
+| Timeline | Stable event ID, deterministic ordering/tie-break, event type, timestamp, referenced nodes and transaction IDs, display label. |
+| DNA | Component scores, combined signature, campaign, linked entities/cases, method/version, and evidence references. |
+| Errors | Consistent structured error response; distinguish invalid input, absent records, and valid empty results. |
+
+Tracing uses a bounded chronological FIFO attribution hypothesis with explicit provenance and conservation of seed amounts. A graph reachability path alone is not proof that a specific victim's money funded every downstream transfer. Hop volume is separate from retained/stopped funds and cannot be interpreted as recovered or uniquely traced money.
+
+## API inventory and dependency timing
+
+| Phase | Planned endpoints |
+| --- | --- |
+| 0 (implemented) | `GET /health`, plus generated `/docs` and `/openapi.json`; startup validates all four datasets |
+| 1 | `POST /api/trace`; `GET /api/risk/top`; `GET /api/risk/{account_id}` |
+| 1 | `GET /api/graph/full`; `/api/graph/subgraph/{account_id}`; `/api/graph/trail/{complaint_id}`; `/api/timeline/{complaint_id}` |
+| 1 | `GET /api/complaints`; `/api/complaints/{complaint_id}` — moved earlier as the Phase 2 prerequisite |
+| 2 (implemented prerequisite) | `GET /api/accounts/{account_id}` — source details and measured inspector statistics |
+| 4 | `GET /api/dna/campaigns`; `/api/dna/entity/{account_id}`; `/api/dna/{complaint_id}` |
+| 5 | `POST /api/report/{complaint_id}` returning a downloadable PDF |
+
+Phase 1 endpoints are implemented, with `/risk/top` declared before the dynamic account route. Trace depth, minimum amount, windows, and summary exposure are defined in the API guide. DNA and report endpoints remain reserved; declare `/dna/campaigns` before dynamic IDs when implementing Phase 4.
+
+## Local operation and future portability
+
+Application root: `fraud-gps/`, with implemented `backend/` and `frontend/`. Backend
+port 8000; Vite frontend port 3000. `app/config.py` implements backend-relative paths
+and explicit local CORS origins. The frontend reads `VITE_API_BASE_URL`, defaulting
+to `http://127.0.0.1:8000/api`. Seed/reference date remain generator CLI options.
+See the [frontend guide](../fraud-gps/frontend/README.md) and
+[data contract](../fraud-gps/backend/DATA_CONTRACT.md) for setup and record semantics.
+
+Use JSON and in-memory NetworkX initially. No microservices, cloud SDKs, external model service, or PostgreSQL dependency is needed for the local phases. Record runtime versions and dependency pins during setup. Hosting adapters and operational controls can be added later behind the same boundaries.

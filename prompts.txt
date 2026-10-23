@@ -1,0 +1,968 @@
+Phase 0:
+
+
+You are building a hackathon project called "Fraud GPS: Powered by Fraud DNA".
+It is an interactive cyber-financial investigation platform that traces stolen money visually like a GPS route map and uses "Fraud DNA" intelligence to link fraud cases.
+
+This is a HACKATHON project. The primary goal is a STUNNING DEMO, not production-grade code. If something is extremely difficult to implement for real, implement a convincing mock that looks identical to a real feature in the UI. Never expose mocks to the user — everything must appear fully functional.
+
+DO NOT start the next phase until I explicitly tell you to proceed.
+
+PHASE 0: Project Setup & Synthetic Data Generation
+
+1. Create the project structure:
+
+fraud-gps/ ├── backend/ │ ├── app/ │ │ ├── init.py │ │ ├── main.py # FastAPI entry │ │ ├── routes/ │ │ │ ├── init.py │ │ │ ├── trace.py # /trace endpoints │ │ │ ├── risk.py # /risk endpoints │ │ │ ├── dna.py # /dna endpoints │ │ │ ├── graph.py # /graph endpoints │ │ │ ├── report.py # /report endpoints │ │ │ └── timeline.py # /timeline endpoints │ │ ├── engines/ │ │ │ ├── init.py │ │ │ ├── graph_builder.py │ │ │ ├── fraud_gps.py # Trail tracing engine │ │ │ ├── fraud_dna.py # DNA correlation engine │ │ │ ├── risk_scorer.py # Risk scoring │ │ │ └── explainer.py # Explainability text │ │ ├── models/ │ │ │ ├── init.py │ │ │ └── schemas.py # Pydantic models │ │ └── data/ │ │ └── (generated data goes here) │ ├── requirements.txt │ └── generate_data.py # Synthetic data generator └── frontend/ └── (React app - created in Phase 2)
+
+
+2. Create `requirements.txt`:
+
+fastapi uvicorn[standard] networkx pandas numpy python-multipart pydantic scikit-learn reportlab python-louvain fuzzywuzzy python-Levenshtein
+
+
+3. Create `generate_data.py` — a COMPREHENSIVE synthetic data generator that creates realistic Indian financial fraud data:
+
+Generate the following interconnected datasets:
+
+a) `complaints.json` — 50 fraud complaints:
+- complaint_id (format: "BH-2024-XXXX")
+- victim_name (Indian names)
+- victim_account (masked format: "XXXX1234")
+- victim_bank (SBI, PNB, BOB, HDFC, ICICI, etc.)
+- suspect_account
+- amount_lost (range ₹5,000 to ₹5,00,000)
+- scam_type (one of: "KYC Fraud", "Digital Arrest", "Loan App Scam", "Investment Scam", "Job Fraud", "OTP Fraud", "Courier Scam")
+- complaint_date (spread across last 6 months)
+- description (realistic 2-3 line description matching scam type)
+- status (one of: "Under Investigation", "Resolved", "Pending")
+
+b) `accounts.json` — 200 bank accounts:
+- account_id (masked format)
+- holder_name (Indian names)
+- bank_name
+- ifsc_code
+- account_type ("Savings", "Current")
+- account_age_days
+- kyc_status ("Full KYC", "Minimal KYC", "e-KYC")
+- phone (Indian format +91-XXXXXXXXXX)
+- location (Bihar cities: Patna, Gaya, Muzaffarpur, Bhagalpur, Darbhanga, Purnia, Arrah, etc.)
+
+c) `transactions.json` — 2000+ transactions:
+- tx_id
+- from_account
+- to_account
+- amount
+- timestamp (ISO format, realistic times)
+- channel ("UPI", "IMPS", "NEFT")
+- remarks (realistic UPI remarks)
+- status ("Success")
+
+d) `entities.json` — shared entity data:
+- entity_id
+- entity_type ("phone", "device_id", "upi_id", "ip_address", "email")
+- entity_value
+- linked_accounts (list of account_ids)
+
+CRITICAL: The data must contain REALISTIC FRAUD PATTERNS:
+
+Pattern 1 — "Gamma Network" (main demo campaign):
+- 8-10 victim accounts send money to 2-3 collector accounts
+- collectors split to 4-5 splitter accounts within 5-15 minutes
+- splitters layer through 2-3 hops
+- money ends at 3-4 cash-out accounts
+- shared phone numbers and device IDs across mule accounts
+- mule accounts have short account_age_days (30-90 days) and "Minimal KYC"
+- transactions happen between 10 PM - 2 AM
+
+Pattern 2 — "Delta Ring" (secondary campaign):
+- 5-6 victims → 1 hub account → fans out to 6 accounts → cash-out
+- different timing pattern (afternoon 2-5 PM)
+- some shared entities with Gamma Network (to show cross-campaign links)
+
+Pattern 3 — "Lone Wolf" (small-scale):
+- 2-3 victims → 1 mule → direct cash-out
+- no shared entities with other campaigns
+
+Also include ~100 legitimate/normal transactions between random accounts to provide background noise.
+
+The generator should create all 4 JSON files in backend/app/data/.
+
+4. Create Pydantic schemas in `models/schemas.py` for all data types.
+
+5. Create `main.py` with FastAPI app, CORS middleware (allow all origins), and include all routers.
+
+Run the data generator and verify the output files are created with realistic data. Print a summary of what was generated (number of complaints, accounts, transactions, entities, and fraud patterns).
+
+STOP HERE. Do not proceed to Phase 1 until I say "proceed".
+
+
+
+
+
+PHASE 1 — Graph Builder & Fraud GPS Engine (Backend Core)
+PHASE 1: Graph Builder & Fraud GPS Engine
+
+Continue building the Fraud GPS project. The data from Phase 0 should already exist.
+
+DO NOT start the next phase until I explicitly tell you to proceed.
+
+Build the following backend modules:
+
+1. `engines/graph_builder.py`:
+- Load all JSON data files on startup
+- Build a NetworkX DiGraph where:
+- Nodes = bank accounts (with all attributes as node data)
+- Edges = transactions (with amount, timestamp, channel as edge data)
+- Also build an "entity linkage graph" — a separate graph where:
+- Nodes = accounts + entities
+- Edges = "account uses entity" relationships
+- Provide helper functions:
+- get_node_data(account_id) → full account info + computed stats
+- get_neighbors(account_id) → immediate connections
+- get_subgraph(account_id, depth=3) → N-hop neighborhood
+- get_linked_complaints(account_id) → complaints involving this account
+
+2. `engines/fraud_gps.py` — The Money Trail Tracer:
+- `trace_money_trail(start_account, start_tx_id=None, max_depth=5)`:
+- Perform a BFS/DFS forward trace from the victim's account
+- Follow outgoing transactions chronologically
+- For each hop, record: from, to, amount, timestamp, channel
+- Return an ordered list of "trail steps" with the full path
+
+- `detect_splits(trail)`:
+- Find nodes where 1 incoming transaction leads to 2+ outgoing transactions within 30 minutes
+- Return list of split events: {node, incoming_amount, outgoing_amounts[], time_gap}
+
+- `detect_rapid_forwards(trail)`:
+- Find nodes that forwarded >80% of received amount within 30 minutes
+- Return list of rapid-forward events
+
+- `detect_layering_chains(trail)`:
+- Find sequential chains of 3+ pass-through nodes
+- Return chains with total time and amount decay
+
+- `detect_cashout_terminals(trail)`:
+- Find terminal nodes (no significant outgoing transactions after receiving)
+- Return list of probable cash-out accounts
+
+- `classify_node_role(account_id)`:
+- Based on graph features, classify as one of:
+- "Collector": high fan-in from unrelated senders
+- "Splitter": receives large, sends multiple smaller
+- "Layering Node": ~equal in and out, fast forward
+- "Hub": high betweenness centrality, connects sub-networks
+- "Cash-Out": terminal node, no onward transfer
+- "Bridge": appears in multiple complaint trails
+- "Normal": no suspicious indicators
+- Return role + confidence + reasons
+
+3. `engines/risk_scorer.py`:
+- `compute_risk_score(account_id)`:
+- Compute a composite risk score (0.0 to 1.0) based on:
+a) Transaction anomaly score (0.20 weight):
+- inflow/outflow ratio, rapid forwarding, amount fragmentation
+b) Graph position score (0.20 weight):
+- betweenness centrality, degree centrality in suspicious subgraph
+c) Complaint linkage score (0.20 weight):
+- direct or N-hop connection to complaint-linked accounts
+d) Temporal burst score (0.15 weight):
+- sudden spike in transaction volume vs historical baseline
+e) Dormancy reactivation score (0.10 weight):
+- long inactive period followed by sudden burst
+f) Entity overlap score (0.15 weight):
+- shares phone/device/UPI with other suspicious accounts
+- Return: total_score, component_scores{}, risk_level ("Low"/"Medium"/"High"/"Critical")
+
+- `score_all_nodes()`:
+- Score every account in the graph
+- Cache results
+
+4. `engines/explainer.py`:
+- `generate_explanation(account_id, risk_data)`:
+- Generate a list of human-readable bullet points explaining WHY this account is suspicious
+- Example output:
+[
+"Received ₹2.3L from 47 unrelated accounts in 4 hours",
+"Forwarded 94% of received funds within 30 minutes of receipt",
+"Linked to 6 active fraud complaints",
+"Account was dormant for 52 days before sudden activation",
+"Shares device ID with 3 other flagged accounts"
+]
+- Make the explanations specific (use real numbers from the data, not generic text)
+
+- `generate_case_summary(complaint_id)`:
+- Generate a 3-5 sentence narrative summary of the fraud trail
+- Should read like an investigation report paragraph
+- Example: "On 2024-09-15, victim Rajesh Kumar (Account XXXX1234, SBI Patna) transferred ₹50,000 via UPI to account XXXX4521..."
+
+5. Create API routes:
+
+`routes/trace.py`:
+- POST /api/trace — accepts {complaint_id} or {account_id}, returns full trail data including path, splits, layering, cash-outs, and node roles
+
+`routes/risk.py`:
+- GET /api/risk/{account_id} — returns risk score, components, level, role, and explanation
+- GET /api/risk/top?limit=20 — returns top N riskiest accounts
+
+`routes/graph.py`:
+- GET /api/graph/full — returns full graph data (nodes + edges) in a format ready for Cytoscape.js:
+```json
+{
+"nodes": [{"data": {"id": "...", "label": "...", "risk_score": 0.9, "role": "Splitter", ...}}],
+"edges": [{"data": {"source": "...", "target": "...", "amount": 50000, "timestamp": "...", ...}}]
+}
+```
+- GET /api/graph/subgraph/{account_id}?depth=3 — returns N-hop subgraph around an account
+- GET /api/graph/trail/{complaint_id} — returns only the nodes and edges in the traced money trail
+
+`routes/timeline.py`:
+- GET /api/timeline/{complaint_id} — returns ordered list of events for timeline playback:
+```json
+[
+{"step": 1, "type": "transfer", "from": "XXXX1234", "to": "XXXX4521", "amount": 50000, "timestamp": "...", "label": "Victim sends ₹50K via UPI"},
+{"step": 2, "type": "split", "node": "XXXX4521", "outputs": [...], "timestamp": "...", "label": "Fund split into 3 accounts"},
+...
+]
+```
+
+6. Make sure the backend starts and all endpoints work:
+- `cd backend && uvicorn app.main:app --reload --port 8000`
+- Test with curl or httpie that /api/trace, /api/risk, /api/graph, /api/timeline all return valid data
+
+IMPORTANT: All monetary values should be formatted in Indian format (₹50,000 not $50,000). All names should be Indian. All dates in DD-MMM-YYYY format in display strings.
+
+STOP HERE. Do not proceed to Phase 2 until I say "proceed".
+
+
+
+
+
+PHASE 2 — React Frontend Scaffold & Graph Canvas
+PHASE 2: React Frontend Scaffold & Animated Graph Canvas
+
+Continue building the Fraud GPS project. The backend from Phase 1 should be running.
+
+DO NOT start the next phase until I explicitly tell you to proceed.
+
+1. Create the React frontend:
+
+cd fraud-gps npx create-react-app frontend --template typescript cd frontend npm install cytoscape react-cytoscapejs @types/cytoscape npm install axios npm install tailwindcss @tailwindcss/vite framer-motion npm install lucide-react npm install @radix-ui/react-tabs @radix-ui/react-dialog @radix-ui/react-tooltip
+
+
+Set up Tailwind CSS properly with a dark theme configuration. The entire app should have a DARK THEME — think "cyber command center" aesthetic:
+- Background: very dark navy/slate (#0a0e1a or similar)
+- Cards: slightly lighter dark (#111827 or similar)
+- Accent: electric blue (#3b82f6) and red (#ef4444) for alerts
+- Text: white and slate-300 for secondary
+- Subtle glowing borders on cards
+
+2. Create the main layout structure:
+
+
+src/ ├── components/ │ ├── layout/ │ │ ├── Header.tsx # Top bar with logo, search, alert count │ │ ├── Sidebar.tsx # Left sidebar: case input + filters │ │ └── InspectorPanel.tsx # Right panel: node details + risk card │ ├── graph/ │ │ ├── GraphCanvas.tsx # Main Cytoscape.js graph component │ │ ├── graphStyles.ts # Cytoscape styling rules │ │ └── graphAnimations.ts # Animation utilities │ ├── timeline/ │ │ └── TimelineBar.tsx # Bottom timeline playback strip │ ├── cards/ │ │ ├── RiskCard.tsx # Risk score card for selected node │ │ ├── TrailStats.tsx # Trail statistics summary │ │ └── AlertCard.tsx # Alert notification card │ └── common/ │ ├── Badge.tsx │ ├── Button.tsx │ └── Loading.tsx ├── hooks/ │ ├── useGraphData.ts # Fetch & manage graph data │ ├── useTrace.ts # Trigger trace & manage trail state │ └── useRisk.ts # Fetch risk data for selected node ├── types/ │ └── index.ts # TypeScript interfaces ├── utils/ │ ├── api.ts # Axios instance + API calls │ └── formatters.ts # Indian currency, date formatters ├── App.tsx └── index.tsx
+
+
+3. Build the MAIN LAYOUT (App.tsx):
+- Full-screen dark layout, NO scrolling on main page
+- Grid layout:
+```
+┌──────────────────────────────────────────────────────────┐
+│ Header (56px) │
+├──────────┬─────────────────────────────┬─────────────────┤
+│ Sidebar │ Graph Canvas │ Inspector │
+│ (280px) │ (flex-1, fills remaining) │ Panel (320px) │
+│ │ │ │
+│ │ │ │
+│ │ │ │
+├──────────┴─────────────────────────────┴─────────────────┤
+│ Timeline Bar (80px) │
+└──────────────────────────────────────────────────────────┘
+```
+- All panels should be visible simultaneously — no tabs hiding the graph
+
+4. Build the HEADER (Header.tsx):
+- Left: "🛰️ Fraud GPS" logo text with subtle glow effect
+- Center: Search bar with placeholder "Search complaint ID, account, or name..."
+- Right: Alert badge showing count of high-risk accounts, and a "Generate Report" button
+- Subtle bottom border with gradient glow
+
+5. Build the SIDEBAR (Sidebar.tsx):
+- **Case Input Section:**
+- Dropdown to select a complaint (populated from /api/complaints)
+- When complaint is selected, auto-fill:
+- Victim name
+- Victim account
+- Amount lost
+- Scam type
+- Date
+- Big prominent "🔍 Trace Funds" button (electric blue, glowing)
+- "🧬 Find Linked Cases" button (purple)
+
+- **Filters Section (below case input):**
+- Toggle: "Show only suspicious nodes"
+- Slider: "Trace depth" (1-7, default 4)
+- Slider: "Min amount ₹" (0 to 1,00,000)
+- Dropdown: "View mode" — Graph / Route / Cluster
+
+- Style: dark card with subtle borders, compact spacing
+
+6. Build the GRAPH CANVAS (GraphCanvas.tsx) — THIS IS THE MOST IMPORTANT COMPONENT:
+
+Use Cytoscape.js (via react-cytoscapejs) with the following:
+
+a) **Graph Styling (graphStyles.ts):**
+- Node styles based on risk_score:
+- risk < 0.3: green (#22c55e), small size
+- risk 0.3-0.5: yellow (#eab308), medium size
+- risk 0.5-0.7: orange (#f97316), medium-large size
+- risk 0.7-0.9: red (#ef4444), large size
+- risk > 0.9: dark red/crimson (#991b1b), largest, with pulsing glow animation
+- Node labels: show masked account ID (e.g., "XXXX4521")
+- Node shape: ellipse
+- Special node styling:
+- Victim nodes: blue (#3b82f6) with diamond shape
+- Cash-out nodes: dark (#1e1e1e) with square shape
+- Edge styles:
+- Width proportional to transaction amount (min 1px, max 8px)
+- Color: light grey for normal, red for suspicious
+- Curved edges (use 'bezier' curve style)
+- Arrow on target
+- Label showing amount in ₹ format on hover
+- Selected node: bright white border glow
+
+b) **Graph Layout:**
+- Use 'cose-bilkent' layout (install: `npm install cytoscape-cose-bilkent`)
+- Or fall back to 'cose' layout
+- Layout should nicely spread nodes with minimal overlap
+
+c) **Graph Interactions:**
+- Click node → update InspectorPanel with that node's data
+- Hover node → show tooltip with account ID, risk score, role
+- Click edge → show transaction details (amount, time, channel)
+- Mouse wheel → zoom
+- Drag → pan
+- Right-click node → "Expand neighborhood" (load more connections)
+
+d) **IMPORTANT — Animated money flow effect:**
+When a trace is active, create an animation that shows money flowing along edges:
+- Use Cytoscape's animation API or CSS-based edge animations
+- Edges in the active trail should have an animated dash pattern flowing in the direction of money movement
+- The animation should flow from source to target
+- Use `edge { line-style: dashed; line-dash-pattern: [6, 3]; line-dash-offset: 0; }` and animate the dash offset
+- Or use the 'edge-progression' animation approach
+- The trail edges should be highlighted in electric blue or bright cyan
+- Non-trail edges should be dimmed (low opacity)
+
+If CSS animation on edges is too complex in Cytoscape, implement this alternative:
+- After trace, highlight trail edges in bright blue/cyan
+- Animate nodes along the trail sequentially — each node in the path "lights up" one by one with a brief delay (300ms per hop), creating a cascading light effect
+- This sequential node-lighting already looks very impressive and is much simpler to implement
+
+7. Build the INSPECTOR PANEL (InspectorPanel.tsx):
+- Shows when a node is selected
+- Header: Account ID (large) + Risk badge (colored by level)
+- Info grid:
+- Holder name
+- Bank
+- Account type
+- KYC status
+- Location
+- Account age
+- Risk Score section:
+- Large circular score display (like a speedometer or ring chart)
+- Score value: e.g., "0.91"
+- Risk level text: "CRITICAL" in red
+- Role badge: e.g., "SPLITTER" with icon
+- Stats:
+- Total inflow: ₹XX,XXX
+- Total outflow: ₹XX,XXX
+- Unique senders: N
+- Unique receivers: N
+- Avg time-to-forward: X min
+- Linked complaints count
+- Initially show a placeholder: "Click a node to inspect" with a subtle icon
+
+8. Create `utils/api.ts`:
+- Axios instance pointing to http://localhost:8000/api
+- Functions:
+- fetchComplaints()
+- traceComplaint(complaintId)
+- fetchGraphData(complaintId?)
+- fetchRiskScore(accountId)
+- fetchTimeline(complaintId)
+- fetchTopRisks(limit)
+- All with proper TypeScript typing
+
+9. Create `utils/formatters.ts`:
+- formatCurrency(amount) → "₹50,000" (Indian number format with commas: 1,00,000)
+- formatDate(iso) → "15-Sep-2024"
+- formatTime(iso) → "10:02 PM"
+- maskAccount(id) → "XXXX4521"
+
+10. Wire it all up:
+- On app load, fetch complaint list for sidebar dropdown
+- When "Trace Funds" is clicked:
+a) Call /api/trace with selected complaint
+b) Call /api/graph/trail with complaint ID
+c) Load graph data into Cytoscape
+d) Trigger the trail animation (sequential node lighting)
+e) Update trail stats
+- When a node is clicked:
+a) Call /api/risk/{account_id}
+b) Update InspectorPanel
+
+Make sure:
+- The app looks POLISHED — dark theme, consistent spacing, no ugly defaults
+- The graph fills the available space beautifully
+- Loading states have subtle animations (skeleton or pulse)
+- The "Trace Funds" button has a satisfying interaction (loading spinner → graph appears)
+
+Test: `npm start` — the frontend should load at localhost:3000, connect to the backend, and allow selecting a complaint, tracing funds, and clicking nodes.
+
+STOP HERE. Do not proceed to Phase 3 until I say "proceed".
+
+
+
+
+
+
+
+
+
+
+
+
+
+PHASE 3: Timeline Playback & Story Mode Animation
+
+Continue building the Fraud GPS project.
+
+DO NOT start the next phase until I explicitly tell you to proceed.
+
+This phase adds the "Investigation Story Mode" — the KILLER DEMO FEATURE that makes judges remember your project.
+
+1. Build the TIMELINE BAR (TimelineBar.tsx):
+
+Position: Bottom strip of the screen (80px height)
+
+Layout:
+
+┌─────────────────────────────────────────────────────────────┐ │ [|◄] [►/❚❚] [►►] [1x ▼] ──●────────────────── 10:02 │ │ 📍 Victim sends ₹50K 📍 Split detected 📍 Cash-out │ └─────────────────────────────────────────────────────────────┘
+
+
+Components:
+- Play/Pause button (►/❚❚)
+- Step backward button (|◄) — go to previous event
+- Step forward button (►►) — skip to next event
+- Speed selector dropdown: 0.5x, 1x, 2x, 3x
+- Progress bar / scrubber:
+- Full width slider
+- Shows event markers (dots) at positions corresponding to each timeline event
+- Current position indicator (glowing dot)
+- Hover on marker → tooltip showing event label
+- Current timestamp display
+- Event label cards: small pills below the progress bar showing key events
+
+Styling:
+- Dark background matching the app theme
+- Glowing progress line (electric blue)
+- Event markers as small glowing dots on the progress line
+- Smooth transitions
+
+2. Implement STORY MODE ANIMATION:
+
+When the user clicks "Play" (or there's a "▶ Replay Trail" button you should add to the sidebar):
+
+The graph canvas should animate the fraud trail step by step:
+
+Step sequence (driven by timeline data from /api/timeline/{complaint_id}):
+
+a) INITIAL STATE:
+- Dim all nodes and edges to very low opacity (0.15)
+- Only the victim node is visible, glowing blue
+- Brief pause (1 second)
+
+b) For each timeline event, animate:
+
+EVENT: "transfer"
+- The edge from source to target LIGHTS UP (opacity 1, bright blue/cyan)
+- Animate the edge: dash-offset animation OR brief highlight pulse
+- The target node FADES IN with a glow effect
+- Target node gets its risk-based color
+- Brief pause (duration based on speed setting: 1s at 1x)
+
+EVENT: "split"
+- The splitting node PULSES (brief scale-up animation)
+- A subtle "⚡ Split Detected" label appears near the node for 2 seconds
+- Multiple outgoing edges light up simultaneously
+- All destination nodes fade in together
+
+EVENT: "rapid_forward"
+- Edge lights up in brighter color (orange/red)
+- "⚡ Rapid Forward" label appears
+
+EVENT: "cashout"
+- Terminal node appears in dark/black color
+- "💰 Cash-Out" label appears
+- Edge turns red
+
+EVENT: "layering"
+- Sequential chain of nodes light up rapidly (150ms each)
+- Creates a "domino" cascade effect
+
+c) FINAL STATE:
+- All trail nodes and edges are visible and colored
+- Non-trail nodes remain dimmed
+- A summary card appears: "Trail Complete — X accounts traced, Y splits, Z cash-outs"
+
+Implementation approach:
+- Store timeline events as an array
+- Use a state variable `currentStep`
+- On play: increment currentStep on an interval
+- On each step, use Cytoscape's `node.animate()` and style changes
+- On pause: stop the interval
+- On scrub: jump to that step (show all events up to that point)
+
+3. Add a "▶ Replay Trail" button to the Sidebar (below Trace Funds):
+- Disabled until a trace has been run
+- Clicking it resets the graph to dimmed state and starts Story Mode
+- Button changes to "❚❚ Pause" during playback
+
+4. Add FLOATING EVENT CARDS during Story Mode:
+- When a significant event occurs (split, rapid forward, cash-out), show a small floating card near the relevant node on the graph canvas:
+```
+┌──────────────────────┐
+│ ⚡ Split Detected │
+│ ₹50,000 → 3 accounts │
+│ in 8 minutes │
+└──────────────────────┘
+```
+- Card should appear with a fade-in animation and disappear after 3 seconds
+- Use absolute positioning over the Cytoscape canvas
+- Get node position from Cytoscape's `node.renderedPosition()`
+
+5. Add NODE ROLE LABELS on the graph:
+- After a trace is complete (or during story mode as nodes appear), show role labels below each suspicious node:
+- "Collector", "Splitter", "Hub", "Cash-Out", "Layering", "Bridge"
+- Use Cytoscape's compound node labels or a second label line
+- Role labels should be in a smaller font, colored to match the role
+
+6. Add a TRAIL STATS CARD (TrailStats.tsx):
+- Appears in the sidebar after a trace completes
+- Shows:
+- Total accounts in trail: N
+- Total amount traced: ₹X,XX,XXX
+- Number of splits: N
+- Number of layers: N
+- Cash-out points: N
+- Fastest transfer: X min
+- Trail duration: X hrs Y min
+- Connected complaints: N
+- Each stat should be in a compact card with icon + value
+- Use a 2-column grid layout
+
+Test: Run a trace, then click "Replay Trail". The graph should animate step-by-step with nodes appearing, edges lighting up, event cards floating, and the timeline scrubber advancing. Clicking pause should freeze the animation. Dragging the scrubber should jump to that point.
+
+STOP HERE. Do not proceed to Phase 4 until I say "proceed".
+
+
+
+
+
+
+
+
+
+
+PHASE 4: Fraud DNA Engine & Intelligence Panel
+
+Continue building the Fraud GPS project.
+
+DO NOT start the next phase until I explicitly tell you to proceed.
+
+This phase adds the intelligence layer that makes Fraud GPS more than just a visualizer.
+
+1. Build `engines/fraud_dna.py` (Backend):
+
+a) ENTITY DNA — `compute_entity_dna(complaint_id_or_account_id)`:
+- Cross-reference entities (phone, device_id, upi_id, ip_address, email) linked to accounts in the current trail
+- Find which OTHER complaints/accounts share these same entities
+- Return:
+```json
+{
+"entity_matches": [
+{"entity_type": "device_id", "entity_value": "DEV-XXXX", "shared_with_accounts": ["XXXX7891", "XXXX3456"], "shared_with_complaints": ["BH-2024-0142", "BH-2024-0308"]},
+{"entity_type": "phone", "entity_value": "+91-98XXXXX12", "shared_with_accounts": [...], "shared_with_complaints": [...]},
+],
+"total_entity_overlaps": 12,
+"unique_linked_complaints": 6
+}
+```
+
+b) BEHAVIORAL DNA — `compute_behavioral_dna(complaint_id)`:
+- For the fraud trail of this complaint, compute a behavioral fingerprint:
+- avg_transaction_amount
+- avg_time_to_forward (minutes)
+- split_ratio (how many ways money is split)
+- operating_hours (time window)
+- num_hops (layers)
+- cashout_method (ATM / merchant / transfer)
+- dormancy_days (avg days accounts were inactive before activation)
+- Compare this fingerprint against ALL other complaints using cosine similarity or simple distance
+- Return top similar cases with similarity percentage
+- MOCK/SHORTCUT OK: You can pre-compute similarity scores during data generation if real-time computation is complex. Store them in a precomputed JSON. The UI just displays them — judges won't know.
+- Return:
+```json
+{
+"fingerprint": {"avg_amount": 15000, "avg_time_to_forward": 6.2, "split_ratio": 3, ...},
+"similar_campaigns": [
+{"campaign_name": "Gamma Network", "similarity": 0.89, "case_count": 14, "total_loss": 1240000},
+{"campaign_name": "Delta Ring", "similarity": 0.45, "case_count": 6, "total_loss": 380000}
+],
+"similar_cases": [
+{"complaint_id": "BH-2024-0142", "similarity": 0.92},
+{"complaint_id": "BH-2024-0308", "similarity": 0.87},
+...
+]
+}
+```
+
+c) NETWORK DNA — `compute_network_dna(complaint_id)`:
+- Compute graph topology features of this complaint's trail subgraph:
+- topology_type: "fan-in-fan-out" / "chain" / "star" / "hub-spoke"
+- node_count, edge_count
+- max_degree, avg_degree
+- clustering_coefficient
+- Compare topology with other complaints
+- MOCK OK: Pre-assign topology types to complaints in data generation. The comparison is a simple lookup.
+- Return:
+```json
+{
+"topology_type": "fan-in-fan-out",
+"topology_features": {...},
+"similar_topologies": [
+{"complaint_id": "BH-2024-0142", "topology_match": 0.94}
+]
+}
+```
+
+d) COMPOSITE FRAUD DNA — `compute_fraud_dna(complaint_id)`:
+- Combine all three DNA types into one response
+- Compute overall "Fraud Signature Score" (0-1):
+fraud_signature = 0.4 * entity_score + 0.35 * behavioral_score + 0.25 * network_score
+- Assign a "Campaign Family" name based on which cluster the complaint belongs to
+- Return the combined DNA report
+
+2. Add API routes (`routes/dna.py`):
+- GET /api/dna/{complaint_id} — returns full Fraud DNA report
+- GET /api/dna/entity/{account_id} — returns entity DNA for a specific account
+- GET /api/dna/campaigns — returns list of all detected fraud campaigns with stats
+
+3. Also add to backend:
+- GET /api/complaints — returns list of all complaints (for sidebar dropdown)
+- GET /api/complaints/{complaint_id} — returns single complaint details
+
+4. Build the FRAUD DNA PANEL in the frontend:
+
+This should be a TABBED section in the InspectorPanel (right panel), or a separate toggleable panel. I recommend making the right panel have TWO TABS:
+
+Tab 1: "🔍 Account Inspector" (existing risk card from Phase 2)
+Tab 2: "🧬 Fraud DNA" (new)
+
+The Fraud DNA tab shows:
+
+a) **Fraud Signature Score** — large display:
+- Big ring/arc chart showing score (e.g., 0.89)
+- Campaign name: "Gamma Network"
+- Case count: "14 linked cases"
+- Total loss: "₹12.4L"
+
+b) **Entity Matches** — list:
+- Icon per entity type (📱 phone, 💻 device, 📧 email, etc.)
+- Entity value (masked)
+- "Shared with X accounts across Y complaints"
+- Each match is a small card that can be clicked
+
+c) **Similar Cases** — list:
+- Case ID, similarity percentage, amount, scam type
+- Styled as compact rows
+- Click a case → load its trace into the graph (stretch goal — for now just display)
+
+d) **Behavioral Signature** — mini visualization:
+- Show the behavioral fingerprint as a small radar/spider chart or as a list of key-value pairs:
+- Avg amount: ₹15,000
+- Time-to-forward: 6.2 min
+- Split ratio: 1→3
+- Operating hours: 10 PM - 2 AM
+- Layers: 3 hops
+
+For the radar chart: Use a simple CSS-based or SVG radar chart. If too complex, just show it as a styled key-value list — that looks equally professional.
+
+5. Add "🧬 Find Linked Cases" button behavior in sidebar:
+- When clicked after a trace:
+a) Call /api/dna/{complaint_id}
+b) Switch right panel to "Fraud DNA" tab
+c) On the graph canvas: draw DASHED EDGES from current trail nodes to nodes that appear in linked complaints
+d) These cross-case edges should be styled differently:
+- Dashed line
+- Purple/magenta color
+- Label: "Also in Case #XXX"
+e) This visually shows how the current case connects to other fraud networks
+
+6. Add a floating "FRAUD DNA" summary card that appears on the graph canvas after DNA analysis:
+
+┌──────────────────────────────────────┐ │ 🧬 Fraud DNA Match │ │ Campaign: Gamma Network │ │ Signature: 89% match │ │ Linked Cases: 14 │ │ Shared Entities: 8 │ └──────────────────────────────────────┘
+
+- Position it in the top-right area of the graph canvas
+- Fade in with animation
+- Semi-transparent dark background
+
+Test: Run a trace, then click "Find Linked Cases". The Fraud DNA panel should populate with entity matches, similar cases, and behavioral signature. Dashed purple edges should appear on the graph connecting to other cases.
+
+STOP HERE. Do not proceed to Phase 5 until I say "proceed".
+
+
+
+
+
+
+
+
+
+
+PHASE 5: Report Generation, Alerts & Investigation Summary
+
+Continue building the Fraud GPS project.
+
+DO NOT start the next phase until I explicitly tell you to proceed.
+
+1. Build REPORT GENERATION (Backend):
+
+`routes/report.py`:
+- POST /api/report/{complaint_id} — generates a PDF investigation report
+
+The report should be a professional PDF containing:
+
+Page 1 — Cover:
+- Title: "FRAUD INVESTIGATION REPORT"
+- Subtitle: "Fraud GPS — Cyber Crime Investigation Platform"
+- Case ID
+- Date generated
+- Classification: "CONFIDENTIAL"
+
+Page 2 — Complaint Summary:
+- Victim details (name, account, bank)
+- Amount lost
+- Scam type
+- Complaint date
+- Complaint description
+
+Page 3 — Money Trail Summary:
+- Auto-generated narrative paragraph (from explainer.generate_case_summary)
+- Key statistics: accounts traced, splits, layers, cash-outs
+- Trail path as a numbered list:
+1. XXXX1234 → XXXX4521 — ₹50,000 at 10:02 PM (UPI)
+2. XXXX4521 → XXXX7891 — ₹20,000 at 10:15 PM (IMPS)
+...
+
+Page 4 — Suspicious Accounts:
+- Table of all flagged accounts:
+| Account | Risk Score | Role | Linked Complaints | Key Indicators |
+- Top 5 suspicious accounts with detailed risk cards
+
+Page 5 — Fraud DNA Analysis:
+- Campaign match info
+- Entity overlaps
+- Similar cases list
+- Behavioral signature
+
+Page 6 — Recommendations:
+- Prioritized list of recommended actions:
+- "FREEZE Account XXXX4521 — Risk: 0.91, Splitter, 6 linked complaints"
+- "REQUEST CDR for +91-98XXXXX12 — linked to 3 mule accounts"
+- "COORDINATE with Varanasi Cyber Cell — cash-out locations identified"
+
+Use ReportLab to generate the PDF. Make it look professional:
+- Clean formatting
+- Tables with borders
+- Consistent fonts
+- Page numbers
+- Header/footer on each page
+
+The endpoint should return the PDF as a downloadable file.
+
+2. Build ALERT SYSTEM (Frontend):
+
+a) Add an ALERT PANEL that can be toggled from the header alert badge:
+- When clicked, shows a dropdown/slide-out panel listing top high-risk accounts
+- Each alert card shows:
+- Account ID
+- Risk score (colored badge)
+- Role
+- Brief reason (1 line)
+- "Investigate" button (clicks the node on graph)
+- Sorted by risk score (highest first)
+- Animate in with slide-down
+
+b) During Story Mode playback, show TOAST NOTIFICATIONS for major events:
+- "⚠️ Suspicious Split Detected — ₹50,000 split into 3 accounts"
+- "🔴 High-Risk Account Found — XXXX4521 (Risk: 0.91)"
+- "🧬 Multi-Case Match — Account appears in 6 other complaints"
+- "💰 Cash-Out Detected — ATM withdrawal at terminal node"
+
+These should appear as toast cards in the top-right corner, stack, and auto-dismiss after 4 seconds.
+Style: dark card with left color border (red for high risk, orange for medium, blue for info).
+
+3. Build AUTO-GENERATED INVESTIGATION SUMMARY:
+
+Add a "📝 Case Summary" section/tab to the right panel (third tab after Account Inspector and Fraud DNA):
+
+Content:
+- Auto-generated narrative text (from backend explainer)
+- Should read like a police investigation note:
+> "On 15-Sep-2024, victim Rajesh Kumar (Account XXXX1234, SBI Patna) was deceived through a KYC fraud scheme and transferred ₹50,000 via UPI to account XXXX4521 (PNB Varanasi). Analysis reveals that within 18 minutes, account XXXX4521 (classified as SPLITTER, Risk Score: 0.91) distributed the funds across three accounts..."
+
+- Below the narrative, show "Recommended Actions" as a checklist:
+- [ ] Freeze Account XXXX4521 (Splitter, Risk: 0.91)
+- [ ] Freeze Account XXXX7891 (Cash-Out, Risk: 0.85)
+- [ ] Request CDR for +91-98XXXXX12
+- [ ] Coordinate with Varanasi Cyber Cell
+- [ ] Link with Case BH-2024-0142 (92% DNA match)
+
+MOCK APPROACH: The narrative and recommendations can be template-based (fill in the blanks from real data). This is MUCH faster than using an LLM and looks equally professional. Judges won't know the difference.
+
+4. Wire up the "Generate Report" button in the header:
+- Calls POST /api/report/{current_complaint_id}
+- Downloads the PDF
+- Show a brief loading state: "Generating forensic report..." with a spinner
+- After download, show a success toast: "✅ Report downloaded"
+
+5. Add KEYBOARD SHORTCUTS for power-user feel:
+- Space: Play/Pause timeline
+- Left arrow: Previous timeline step
+- Right arrow: Next timeline step
+- F: Fit graph to screen
+- R: Reset/replay trail
+- Escape: Deselect node
+
+Show a small "⌨️" icon in the header that reveals shortcuts on hover.
+
+Test: Full flow — select complaint, trace funds, watch story mode with toasts, click nodes to inspect, switch to Fraud DNA tab, read case summary, download PDF report. Everything should feel smooth and professional.
+
+STOP HERE. Do not proceed to Phase 6 until I say "proceed".
+
+
+
+
+
+
+
+
+PHASE 6: Visual Polish, Edge Cases & Demo-Ready State
+
+This is the FINAL PHASE. Make everything PERFECT for the demo.
+
+DO NOT start any new features. Focus ONLY on polish and reliability.
+
+1. VISUAL POLISH — Graph Canvas:
+
+a) Add a subtle dark grid pattern or dot matrix background to the graph canvas area (like a tactical/radar screen). CSS background-image with a repeating dot pattern.
+
+b) Add a subtle vignette effect (darker edges) around the graph canvas using CSS box-shadow inset or a gradient overlay.
+
+c) When no trace is active, show a ghost state:
+- Center text: "Select a complaint and click 'Trace Funds' to begin investigation"
+- Subtle animated radar sweep or pulsing circle in the background
+- Or just a clean empty state with the Fraud GPS logo watermark
+
+d) Add smooth transitions when switching between graph states:
+- When trace loads: nodes should fade in with stagger (not all at once)
+- When Fraud DNA links appear: dashed edges should draw in (not pop in)
+
+e) Ensure the graph is properly centered and zoomed-to-fit after trace completes
+
+f) Add a minimap in the corner of the graph canvas if Cytoscape supports it (cytoscape has a navigator extension). If too complex, skip it.
+
+2. VISUAL POLISH — UI Components:
+
+a) Add subtle glow effects:
+- Risk score ring should glow based on color (red glow for high risk)
+- "Trace Funds" button should have a subtle pulsing glow when ready
+- Active tab indicator should glow
+
+b) Add loading skeletons:
+- Inspector panel: show skeleton cards while loading
+- Fraud DNA panel: show skeleton while computing
+- Graph canvas: show centered spinner while loading
+
+c) Numbers should COUNT UP when they appear:
+- Risk score: animate from 0 to 0.91
+- Money amounts: count up animation
+- Use requestAnimationFrame or a simple counter hook
+
+d) Ensure all ₹ amounts use Indian formatting: ₹1,00,000 not ₹100,000
+
+e) Add subtle hover effects on all interactive elements (cards, buttons, nodes)
+
+3. ERROR HANDLING & EDGE CASES:
+- If backend is down: show a "⚠️ Backend connection failed. Start the server and refresh." message
+- If trace returns empty: show "No money trail found for this complaint"
+- If risk data fails: show "Unable to load risk data" with retry button
+- No unhandled promise rejections
+- No console errors
+- No layout shifts or jumps
+
+4. DEMO DATA VERIFICATION:
+- Run through the MAIN DEMO SCENARIO using the "Gamma Network" complaint:
+a) Select the complaint with the largest amount
+b) Click Trace → verify animated graph shows clear splits and layers
+c) Click the highest-risk node → verify risk card shows detailed info
+d) Click Find Linked Cases → verify DNA panel shows entity matches
+e) Play Story Mode → verify smooth step-by-step animation
+f) Download Report → verify PDF is well-formatted
+
+- If ANY step looks bad, fix it. The demo must be FLAWLESS.
+
+- Make sure the "Gamma Network" complaint produces a visually interesting graph:
+- At least 10-15 nodes visible
+- At least 2-3 clear split points
+- At least 2 cash-out terminals
+- Clear visual hierarchy (victim blue → collectors orange → splitters red → cash-out dark)
+
+If the current data doesn't produce a good visual, adjust the synthetic data generator to create a more impressive demo scenario.
+
+5. CREATE A DEMO STARTUP SCRIPT:
+
+Create `start_demo.bat` (or `start_demo.sh`) in the project root:
+
+@echo off echo Starting Fraud GPS Demo... echo. echo Starting backend... start /B cmd /c "cd backend && pip install -r requirements.txt && python generate_data.py && uvicorn app.main:app --port 8000" echo Waiting for backend to start... timeout /t 5 echo. echo Starting frontend... start /B cmd /c "cd frontend && npm install && npm start" echo. echo ==================================== echo Fraud GPS is starting up! echo Backend: http://localhost:8000 echo Frontend: http://localhost:3000 echo ====================================
+
+
+6. FINAL CHECKS — run through this checklist:
+- [ ] App loads without errors
+- [ ] Dark theme is consistent everywhere
+- [ ] Complaint dropdown populated
+- [ ] Trace Funds produces animated graph
+- [ ] Nodes are colored by risk
+- [ ] Clicking node shows risk card
+- [ ] Risk explanations are specific (real numbers, not generic)
+- [ ] Story Mode plays smoothly
+- [ ] Timeline scrubber works
+- [ ] Event toasts appear during story mode
+- [ ] Fraud DNA panel shows entity matches
+- [ ] Fraud DNA panel shows similar cases
+- [ ] Dashed cross-case edges appear on graph
+- [ ] Case summary narrative reads well
+- [ ] PDF report downloads and opens correctly
+- [ ] Alert panel shows top risks
+- [ ] No console errors
+- [ ] Responsive enough to work on projector resolution (1920x1080)
+
+7. PERFORMANCE:
+- Ensure graph renders quickly (< 2 seconds for 50 nodes)
+- Ensure API responses are < 500ms
+- If anything is slow, cache it or precompute it
+
+This should result in a DEMO-READY, POLISHED application that will impress hackathon judges.
+
+DONE. The project is complete and ready for the hackathon demo.
