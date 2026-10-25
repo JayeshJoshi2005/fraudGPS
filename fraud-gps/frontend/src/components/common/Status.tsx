@@ -20,3 +20,19 @@ export function ErrorState({ message, retry }: { message: string; retry: () => v
 export function Badge({ text, level = '' }: { text: string; level?: string }) {
   return <span className={`badge ${level.toLowerCase()}`}>{text}</span>;
 }
+
+export function EvidenceSkeleton({ children }: { children: string }) {
+  return (
+    <div className="evidence-skeleton" role="status" aria-busy="true">
+      <span className="skeleton-label">{children}</span>
+      <div aria-hidden="true">
+        <i className="skeleton-block skeleton-heading" />
+        <i className="skeleton-block" />
+        <i className="skeleton-block" />
+        <i className="skeleton-block skeleton-card" />
+        <i className="skeleton-block" />
+        <i className="skeleton-block" />
+      </div>
+    </div>
+  );
+}

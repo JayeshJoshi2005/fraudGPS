@@ -1,8 +1,8 @@
-# Analysis API (Phases 1–4)
+# Analysis API (Phases 1–5)
 
 Run the backend on `http://127.0.0.1:8000`; `/docs` and `/openapi.json` expose
 the typed models. Source record schemas remain in `app/models/schemas.py`; analysis
-responses are in `app/models/analysis.py` and `app/models/dna.py`. All financial amounts are decimal INR
+responses are in `app/models/analysis.py`, `app/models/dna.py`, and `app/models/reports.py`. All financial amounts are decimal INR
 strings. Display fields use Indian currency grouping and Asia/Kolkata dates.
 
 ## Endpoints
@@ -23,8 +23,8 @@ strings. Display fields use Indian currency grouping and Asia/Kolkata dates.
 | `GET /api/dna/campaigns` | Dataset/version/options, inferred families with source complaint IDs and exact reported-loss totals |
 | `GET /api/dna/entity/{account_id}` | Masked identifier matches and source account/case links for one account |
 | `GET /api/dna/{complaint_id}` | Full source-derived entity/behavior/network/composite DNA, inferred family, ranked cases, and nonfinancial link graph |
-
-Report routes remain reserved for Phase 5 and expose no endpoints yet.
+| `GET /api/report/{complaint_id}/summary` | Exact filtered trace, narrative, DNA, flagged accounts, evidence-linked review actions, and limitations |
+| `POST /api/report/{complaint_id}` | Downloadable PDF using the same shared analysis and requested trace options |
 
 Account detail returns `{dataset_version, account, total_inflow, total_outflow,
 transaction_count, distinct_senders, distinct_recipients, average_forward_minutes,
@@ -195,6 +195,54 @@ manifest, prepared similarity JSON, or campaign name lookup is used.
 
 See [Phase 4 contract](../../docs/PHASE_4_CONTRACT.md) and
 [review](../../docs/PHASE_4_REVIEW.md) for evidence and sample results.
+
+## Investigation summaries and PDF exports
+
+`GET /api/report/{complaint_id}/summary` accepts the usual `max_depth`,
+`min_amount`, and `forwarding_window_hours` query parameters. It returns
+`{dataset_version, method_version, complaint, trace, dna, narrative,
+narrative_transaction_ids, flagged_accounts, recommendations, limitations}`.
+Flagged accounts are non-victims in the selected trace with dataset-wide risk
+>=.50. Each row distinguishes dataset-wide risk from selected-trail role and
+includes other complaint IDs and selected-trail transaction references.
+
+Actions have stable `action_id`, `kind`, `priority`, `title`, `rationale`, and
+account/entity/transaction/complaint reference arrays. Kinds are `freeze_review`,
+`telecom_records`, `coordinate`, and `link_case`. These are review suggestions;
+the API has no operational freeze, telecom-request, or messaging endpoints.
+Location suggestions cite source account addresses and do not assert withdrawal
+locations. Case comparisons require shared identifiers or similarity >=.65.
+
+`POST /api/report/{complaint_id}` accepts an optional JSON body:
+
+```json
+{
+  "max_depth": 4,
+  "min_amount": "100",
+  "forwarding_window_hours": 24,
+  "expected_dataset_version": "<the active trace's dataset_version>"
+}
+```
+
+Omitted options use API defaults (depth 5, INR 100, 24 hours). A mismatched
+expected version returns **409** before PDF generation. The response has
+`Content-Type: application/pdf`, attachment `Content-Disposition`,
+`X-Dataset-Version`, and `Cache-Control: no-store`. CORS exposes the disposition
+and dataset headers. No PDF is persisted by the server.
+
+Reports contain six sections starting on separate pages. Long sections continue
+with repeated table headers; embedded DejaVu fonts support rupee amounts. Source
+and FIFO-attributed amounts remain separate. Local checklist review marks are
+not sent to the backend or exported as action-completion claims.
+
+```powershell
+$version = (Invoke-RestMethod http://127.0.0.1:8000/health).dataset_version
+$body = @{max_depth=4; min_amount='100'; forwarding_window_hours=24; expected_dataset_version=$version} | ConvertTo-Json
+Invoke-WebRequest http://127.0.0.1:8000/api/report/BH-2026-0001 -Method Post -ContentType application/json -Body $body -OutFile investigation.pdf
+```
+
+See the [Phase 5 contract](../../docs/PHASE_5_CONTRACT.md) and
+[PDF/browser review](../../docs/PHASE_5_REVIEW.md).
 
 ## Errors
 

@@ -25,6 +25,7 @@ function frameGraph(cy: Core, readable = false) {
 }
 
 interface Props {
+  active?: boolean;
   graph: GraphData;
   trace?: TraceResult;
   view: ViewMode;
@@ -36,8 +37,11 @@ interface Props {
   dna?: DNAReport;
   focusedEntity?: string;
   onHideDNA: () => void;
+  fitRevision: number;
+  focusRequest?: { id: string; revision: number };
 }
 export function GraphCanvas({
+  active = true,
   graph,
   trace,
   view,
@@ -49,6 +53,8 @@ export function GraphCanvas({
   dna,
   focusedEntity,
   onHideDNA,
+  fitRevision,
+  focusRequest,
 }: Props) {
   const [cy, setCy] = useState<Core | null>(null);
   const [tooltip, setTooltip] = useState<{
@@ -60,7 +66,21 @@ export function GraphCanvas({
   const [context, setContext] = useState<{ x: number; y: number; id: string } | null>(null);
   const [layoutRevision, setLayoutRevision] = useState(0);
   const host = useRef<HTMLDivElement>(null);
+  const visibleIds = useRef(new Set<string>());
+  const lastLayout = useRef<
+    | {
+        cy: Core;
+        graph: GraphData;
+        view: ViewMode;
+        trace?: TraceResult;
+        revision: number;
+      }
+    | undefined
+  >(undefined);
   const receiveCore = useCallback((core: Core) => setCy((old) => (old === core ? old : core)), []);
+  useEffect(() => {
+    if (cy && !cy.destroyed() && fitRevision) frameGraph(cy);
+  }, [cy, fitRevision]);
   const elements = useMemo(() => {
     const trail = new Set(trace?.steps.map((s) => s.tx_id) || []);
     const risky = new Set(
@@ -132,9 +152,10 @@ export function GraphCanvas({
     cy.on('mouseout', 'node, edge', clear);
     cy.on('cxttap', 'node', contextTap);
     cy.on('pan zoom', viewport);
-    let lastSize = '';
+    let lastSize = `${host.current?.clientWidth}:${host.current?.clientHeight}`;
     const observer = new ResizeObserver(() => {
       if (cy.destroyed() || !host.current) return;
+      if (!host.current.clientWidth || !host.current.clientHeight) return;
       const size = `${host.current.clientWidth}:${host.current.clientHeight}`;
       if (size === lastSize) return;
       lastSize = size;
@@ -153,10 +174,24 @@ export function GraphCanvas({
   }, [cy, onSelect]);
   useEffect(() => {
     if (!cy || cy.destroyed()) return;
+    if (!active) return;
+    const previous = lastLayout.current;
+    if (
+      previous?.cy === cy &&
+      previous.graph === graph &&
+      previous.view === view &&
+      previous.trace === trace &&
+      previous.revision === layoutRevision
+    ) {
+      cy.resize();
+      return;
+    }
+    lastLayout.current = { cy, graph, view, trace, revision: layoutRevision };
     setTooltip(null);
     setContext(null);
     let options: LayoutOptions = {
       name: 'cose',
+      fit: false,
       animate: false,
       padding: 55,
       randomize: false,
@@ -168,6 +203,7 @@ export function GraphCanvas({
     if (view === 'Route')
       options = {
         name: 'preset',
+        fit: false,
         positions: flowPositions(graph, cy.width(), cy.height(), trace?.start_account),
         padding: 55,
       };
@@ -187,7 +223,7 @@ export function GraphCanvas({
           };
         });
       });
-      options = { name: 'preset', positions, padding: 65 };
+      options = { name: 'preset', positions, padding: 65, fit: false };
     }
     const layout = (
       view === 'Route'
@@ -206,11 +242,68 @@ export function GraphCanvas({
     return () => {
       if (!cy.destroyed()) layout.stop();
     };
-  }, [cy, graph, view, trace, layoutRevision]);
+  }, [cy, graph, view, trace, layoutRevision, active]);
   useEffect(() => {
     if (!cy || cy.destroyed()) return;
     applyStoryFrame(cy, story, trace);
   }, [cy, graph, story, trace]);
+  const inStory = !!story;
+  useEffect(() => {
+    if (!cy || cy.destroyed() || !active) return;
+    const added = cy.elements().filter((element) => !visibleIds.current.has(element.id()));
+    visibleIds.current = new Set(cy.elements().map((element) => element.id()));
+    if (inStory || !added.length || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const timers: number[] = [];
+    const motion = matchMedia('(prefers-reduced-motion: reduce)');
+    const finish = () => {
+      timers.forEach(clearTimeout);
+      if (!cy.destroyed()) added.stop(true, false).removeStyle('opacity line-dash-offset');
+    };
+    const nodes = added.nodes().sort((a, b) => a.position('x') - b.position('x'));
+    nodes.style('opacity', 0);
+    nodes.forEach((node, index) => {
+      timers.push(
+        window.setTimeout(
+          () => {
+            if (!cy.destroyed())
+              node.animate(
+                { style: { opacity: 1 } },
+                {
+                  duration: 200,
+                  complete: () => {
+                    if (!cy.destroyed()) node.removeStyle('opacity');
+                  },
+                },
+              );
+          },
+          (index * 180) / Math.max(1, nodes.length),
+        ),
+      );
+    });
+    // Keep all dense-graph transfers; animate only identifier edges or small trails.
+    const edges = added.edges().length <= 160 ? added.edges() : added.edges('.dna-link');
+    edges.forEach((edge) => {
+      const target = Number(edge.style('opacity')) || 0.65;
+      edge.style({ opacity: 0, 'line-dash-offset': edge.hasClass('dna-link') ? 18 : 0 });
+      edge.animate(
+        { style: { opacity: target, 'line-dash-offset': 0 } },
+        {
+          duration: 350,
+          complete: () => {
+            if (!cy.destroyed()) edge.removeStyle('opacity line-dash-offset');
+          },
+        },
+      );
+    });
+    const changed = () => {
+      if (motion.matches) finish();
+    };
+    motion.addEventListener('change', changed);
+    return () => {
+      finish();
+      motion.removeEventListener('change', changed);
+    };
+  }, [cy, graph, inStory, active]);
   useEffect(() => {
     if (!cy || cy.destroyed() || !story || !playback.playing) return;
     return animateStory(cy, story.current, playback.speed);
@@ -220,6 +313,13 @@ export function GraphCanvas({
     cy.elements().unselect();
     if (selection) cy.getElementById(selection.id).select();
   }, [cy, selection, graph]);
+  useEffect(() => {
+    if (!cy || cy.destroyed() || !focusRequest || selection?.id !== focusRequest.id) return;
+    const target = cy.getElementById(focusRequest.id);
+    if (target.empty()) return;
+    if (cy.zoom() < 0.65) cy.zoom(0.65);
+    cy.center(target);
+  }, [cy, graph, focusRequest, selection]);
   useEffect(() => {
     if (!cy || cy.destroyed()) return;
     cy.edges('.dna-link').removeClass('dna-focused');

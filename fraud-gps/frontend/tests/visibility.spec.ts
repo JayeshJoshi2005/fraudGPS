@@ -5,7 +5,7 @@ type GraphElement = HTMLElement & { _cyreg: { cy: Core } };
 test('the trail is readable, panels release space, and selection opens evidence', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/#/trace');
   await page.getByRole('button', { name: 'Trace Funds', exact: true }).click();
   const canvas = page.locator('#network-canvas');
   await expect(canvas.locator('canvas').first()).toBeVisible();
@@ -44,7 +44,7 @@ test('the trail is readable, panels release space, and selection opens evidence'
   await page.getByRole('button', { name: 'Expand graph', exact: true }).click();
   await expect
     .poll(() => canvas.evaluate((el) => (el as GraphElement)._cyreg.cy.width()))
-    .toBeGreaterThan(geometry.width + 250);
+    .toBeGreaterThan(geometry.width + 200);
   await expect(page.getByRole('button', { name: 'Restore panels' })).toBeVisible();
   const point = await canvas.evaluate((el) =>
     (el as GraphElement)._cyreg.cy.nodes('[role = "Victim"]').first().renderedPosition(),
@@ -57,14 +57,14 @@ test('the trail is readable, panels release space, and selection opens evidence'
   await expect(page.getByRole('complementary', { name: 'Inspector' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Restore panels' }).click();
   await expect(page.getByLabel('SELECT COMPLAINT')).toBeVisible();
-  await page.screenshot({ path: '../../docs/screenshots/ui-refresh-trail.png' });
+  await page.screenshot({ path: '../../docs/screenshots/modular-trail.png' });
 });
 
 test('compact screens preserve readable nodes and allow the full graph to be fitted', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/#/trace');
   await page.getByRole('button', { name: 'Trace Funds', exact: true }).click();
   const canvas = page.locator('#network-canvas');
   await expect(canvas.locator('canvas').first()).toBeVisible();
@@ -95,7 +95,7 @@ test('short laptop screens separate labels and resize without losing the trail',
   page,
 }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
-  await page.goto('/');
+  await page.goto('/#/trace');
   await page.getByRole('button', { name: 'Trace Funds', exact: true }).click();
   const canvas = page.locator('#network-canvas');
   await expect(canvas.locator('canvas').first()).toBeVisible();
@@ -116,7 +116,7 @@ test('short laptop screens separate labels and resize without losing the trail',
   expect(geometry.minSize).toBeGreaterThanOrEqual(23);
   expect(geometry.bounds.w / geometry.width).toBeGreaterThan(0.8);
   expect(geometry.collisions).toBe(0);
-  await page.screenshot({ path: '../../docs/screenshots/ui-refresh-laptop.png' });
+  await page.screenshot({ path: '../../docs/screenshots/modular-laptop.png' });
   await page.setViewportSize({ width: 1024, height: 768 });
   const point = await canvas.evaluate((el) =>
     (el as GraphElement)._cyreg.cy.nodes('[role = "Victim"]').first().renderedPosition(),

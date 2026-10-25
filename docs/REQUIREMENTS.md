@@ -26,7 +26,7 @@ The primary local demonstration uses synthetic Indian financial records, masked 
 | REPORT-01 | Downloadable PDF containing cover, complaint, trail, suspicious accounts, DNA, recommendations, and supporting evidence references. PDF pp. 14–15, 21, 23; prompt 5. | Phase 5 |
 | ALERT-01 | Sorted account alerts, event toasts, case summary, action checklist, keyboard shortcuts. Prompt 5. | Phase 5 |
 | QUALITY-01 | Empty/error/retry states, consistent presentation, reliable startup, full local demo rehearsal. Prompt 6. | Throughout; final gate in Phase 6 |
-| PERF-01 | Graph renders in under 2 seconds for 50 nodes; API responses under 500 ms. Prompt 6. | Phase 6 measured targets, not current results |
+| PERF-01 | Graph renders in under 2 seconds for 50 nodes; API responses under 500 ms. Prompt 6. | Verified local measurements in Phase 6 and the modular UI review; conditions recorded |
 
 ## Scope boundaries
 

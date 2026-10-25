@@ -33,8 +33,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     application = FastAPI(
         title="Fraud GPS: Powered by Fraud DNA",
-        version="0.2.0",
-        description="Local synthetic-data tracing, risk, graph, timeline, and complaint APIs.",
+        version="0.7.0",
+        description=(
+            "Local synthetic-data tracing, risk, DNA, timeline, summary, and PDF report APIs."
+        ),
         lifespan=lifespan,
     )
     application.add_middleware(
@@ -43,7 +45,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_credentials=False,
         allow_methods=["GET", "POST"],
         allow_headers=["Content-Type"],
-        expose_headers=["X-Dataset-Version"],
+        expose_headers=["X-Dataset-Version", "Content-Disposition"],
     )
     for module in (trace, risk, dna, graph, report, timeline, complaints, accounts):
         application.include_router(module.router)

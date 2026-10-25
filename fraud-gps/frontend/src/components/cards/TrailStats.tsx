@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import type { TraceResult } from '../../types';
 import { formatCurrency, formatDuration, formatMinutes } from '../../utils/formatters';
+import { AnimatedValue } from '../common/AnimatedValue';
 
 export function TrailStats({ trace, compact = false }: { trace?: TraceResult; compact?: boolean }) {
   const splits = trace?.detections.filter((e) => e.type === 'split').length;
@@ -83,7 +84,13 @@ export function TrailStats({ trace, compact = false }: { trace?: TraceResult; co
             <Icon size={16} />
             <span>
               {label}
-              <strong>{value}</strong>
+              <strong>
+                {trace && ['SEEDED FUNDS', 'FUNDS TRACED'].includes(label) ? (
+                  <AnimatedValue value={trace.metrics.seed_amount} money />
+                ) : (
+                  value
+                )}
+              </strong>
             </span>
           </div>
         ))}

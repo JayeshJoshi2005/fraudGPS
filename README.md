@@ -4,11 +4,11 @@ An interactive cyber-financial investigation platform for tracing money trails, 
 
 ## Current state
 
-**Phases 0–4 are implemented and verified.** The backend provides synthetic data, chronological tracing, risk, graphs, timelines, source-derived Fraud DNA, inferred campaign families, and complaint/account APIs. The React frontend supports investigation, inspection, story replay, and a Fraud DNA tab with masked identifier evidence, similar-case navigation, and distinct nonfinancial graph relations. Validation: 107 backend tests, 45 frontend tests, 25 live-browser tests against the production bundle, and a successful build. Phase 5 requires a new request; hosting/cloud work remains deferred.
+**Phases 0–6 and the modular redesign are implemented and verified locally (v0.7.0).** The application traces synthetic financial records, explains risk, compares Fraud DNA, replays evidence, and exports investigation PDFs. The workspace now separates **Cases, Money Trail, Fraud DNA, and Case Summary**, with a large graph, optional settings, desktop navigation, and mobile navigation. Validation: **122 backend tests, 99 frontend tests, and 50 production-browser tests**, plus build, formatting, startup, replacement-data, and PDF checks. Hosting and team recording/submission remain separate tasks.
 
-See the [frontend setup guide](fraud-gps/frontend/README.md), [backend setup guide](fraud-gps/backend/README.md), [API guide](fraud-gps/backend/API.md), and [Phase 4 review with screenshots](docs/PHASE_4_REVIEW.md).
+Run [start_demo.bat](start_demo.bat) from Windows, then open http://127.0.0.1:3000. See the [modular workspace review and screenshots](docs/MODULAR_UI_REVIEW.md), [demo and recording guide](docs/DEMO_GUIDE.md), [frontend guide](fraud-gps/frontend/README.md), [backend guide](fraud-gps/backend/README.md), and [API guide](fraud-gps/backend/API.md).
 
-The subsequent [UI refinement](docs/UI_REFRESH_REVIEW.md) gives the graph more room,
+The [UI refinement](docs/UI_REFRESH_REVIEW.md) gives the graph more room,
 clearer labels and arrows, optional side panels, and responsive transaction routes.
 Its verification includes 49 frontend tests and 28 production-browser tests.
 
@@ -26,10 +26,10 @@ Its verification includes 49 frontend tests and 28 production-browser tests.
 - [requirements.pdf](requirements.pdf): product requirements, experience, scoring, architecture, feature tiers, and demo storyline; 26 pages.
 - [prompts.txt](prompts.txt): detailed implementation sequence, Phases 0–6.
 
-The PDF describes the product vision. The prompts define the intended delivery sequence. The user's latest instructions govern scope: work locally and complete only the explicitly requested phase before stopping for review.
+The PDF describes the product vision. The prompts define the intended delivery sequence. The user's latest instruction authorizes finishing the local project and simplifying its interface; hosting and actual team submission remain separate.
 
 ## Team handoff
 
 Use `docs/PROGRESS.md` as the current status record. Before starting a task, record its owner and scope. After completing it, record changed files, verification evidence, limitations, and the next handoff. Planned work is not implemented work; mark completion only after verification.
 
-Later-phase directories and behavior remain planned. The preserved `AGENTS.md` predates implementation and refers to the PDF's former filename, `hjgj.pdf`; the source is now `requirements.pdf`. Use the backend setup guide for current commands.
+The preserved `AGENTS.md` predates implementation and refers to the PDF's former filename, `hjgj.pdf`; the source is now `requirements.pdf`. Use the demo and backend guides for current commands.

@@ -14,7 +14,7 @@ import type { GraphData, TraceResult } from '../../types';
 import type { DNAReport } from '../../types/dna';
 import { formatCurrency, formatMinutes } from '../../utils/formatters';
 import { operatingWindow, percent } from '../../utils/dna';
-import { ErrorState, Loading } from '../common/Status';
+import { ErrorState, EvidenceSkeleton } from '../common/Status';
 
 interface Props {
   report?: DNAReport;
@@ -62,7 +62,7 @@ export function DNAPanel({
       </div>
       {loading ? (
         <div className="dna-status">
-          <Loading>Comparing identifiers and patterns…</Loading>
+          <EvidenceSkeleton>Comparing identifiers and patterns…</EvidenceSkeleton>
           <p>Using the current trace filters across all complaints.</p>
         </div>
       ) : error ? (
@@ -80,67 +80,70 @@ export function DNAPanel({
         </div>
       ) : (
         <>
-          <section className="dna-signature" aria-label="Fraud signature">
-            <div
-              className="signature-ring"
-              role="img"
-              aria-label={`Fraud signature ${percent(report.signature_score)}`}
-              style={{
-                background: `conic-gradient(#c084fc ${report.signature_score * 360}deg, #24314b 0deg)`,
-              }}
-            >
-              <div>
-                <strong>{percent(report.signature_score)}</strong>
-                <span>SIGNATURE MATCH</span>
+          <div className="dna-overview-grid">
+            <section className="dna-signature" aria-label="Fraud signature">
+              <div
+                className="signature-ring"
+                role="img"
+                aria-label={`Fraud signature ${percent(report.signature_score)}`}
+                style={{
+                  background: `conic-gradient(#c084fc ${report.signature_score * 360}deg, #24314b 0deg)`,
+                }}
+              >
+                <div>
+                  <strong>{percent(report.signature_score)}</strong>
+                  <span>SIGNATURE MATCH</span>
+                </div>
               </div>
+              <p>
+                {report.best_match_complaint_id
+                  ? `Closest case: ${report.best_match_complaint_id}`
+                  : 'No comparable case found'}
+              </p>
+              <small>Matching strength · heuristic score</small>
+            </section>
+            <div className="dna-components">
+              {(['entity', 'behavioral', 'network'] as const).map((component) => (
+                <div key={component} title={report.component_formulas[component]}>
+                  <label>
+                    {component}
+                    <small>{Math.round(report.weights[component] * 100)}% weight</small>
+                  </label>
+                  <meter
+                    min={0}
+                    max={1}
+                    value={report.component_scores[component]}
+                    aria-label={`${component} similarity`}
+                  />
+                  <strong>{percent(report.component_scores[component])}</strong>
+                </div>
+              ))}
             </div>
-            <p>
-              {report.best_match_complaint_id
-                ? `Closest case: ${report.best_match_complaint_id}`
-                : 'No comparable case found'}
-            </p>
-            <small>Matching strength · heuristic score</small>
-          </section>
-          <div className="dna-components">
-            {(['entity', 'behavioral', 'network'] as const).map((component) => (
-              <div key={component} title={report.component_formulas[component]}>
-                <label>
-                  {component}
-                  <small>{Math.round(report.weights[component] * 100)}% weight</small>
-                </label>
-                <meter
-                  min={0}
-                  max={1}
-                  value={report.component_scores[component]}
-                  aria-label={`${component} similarity`}
-                />
-                <strong>{percent(report.component_scores[component])}</strong>
-              </div>
-            ))}
+            <article className="dna-family" aria-label="Detected campaign family">
+              <span className="eyebrow">INFERRED CAMPAIGN FAMILY</span>
+              <h3>{report.campaign?.campaign_name || 'No detected family'}</h3>
+              {report.campaign ? (
+                <>
+                  <p>
+                    {report.campaign.case_count} cases ·{' '}
+                    {formatCurrency(report.campaign.total_loss)}
+                  </p>
+                  <small>Sum of reported losses · each case counted once</small>
+                  <details>
+                    <summary>Family membership</summary>
+                    {report.campaign.complaint_ids.map((cid) => (
+                      <span className="dna-case-id" key={cid}>
+                        {cid}
+                        {cid === report.complaint_id ? ' · current' : ''}
+                      </span>
+                    ))}
+                  </details>
+                </>
+              ) : (
+                <p>No group meets both identifier and signature thresholds.</p>
+              )}
+            </article>
           </div>
-          <article className="dna-family" aria-label="Detected campaign family">
-            <span className="eyebrow">INFERRED CAMPAIGN FAMILY</span>
-            <h3>{report.campaign?.campaign_name || 'No detected family'}</h3>
-            {report.campaign ? (
-              <>
-                <p>
-                  {report.campaign.case_count} cases · {formatCurrency(report.campaign.total_loss)}
-                </p>
-                <small>Sum of reported losses · each case counted once</small>
-                <details>
-                  <summary>Family membership</summary>
-                  {report.campaign.complaint_ids.map((cid) => (
-                    <span className="dna-case-id" key={cid}>
-                      {cid}
-                      {cid === report.complaint_id ? ' · current' : ''}
-                    </span>
-                  ))}
-                </details>
-              </>
-            ) : (
-              <p>No group meets both identifier and signature thresholds.</p>
-            )}
-          </article>
           <div className="dna-section-heading">
             <Link2 size={15} />
             <h3>Shared identifiers</h3>

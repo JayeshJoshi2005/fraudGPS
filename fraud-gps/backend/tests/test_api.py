@@ -19,7 +19,8 @@ def test_health_docs_and_no_later_phase_endpoints(generated_dir):
         paths = set(client.get("/openapi.json").json()["paths"])
         assert "/api/trace" in paths
         assert "/api/dna/campaigns" in paths
-        assert not any(path.startswith("/api/report") for path in paths)
+        assert "/api/report/{complaint_id}" in paths
+        assert "/api/report/{complaint_id}/summary" in paths
         assert client.post("/api/trace", json={"account_id": "ACC-000001"}).status_code == 200
 
 

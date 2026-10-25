@@ -39,6 +39,7 @@ def generate_case_summary(
     trail: TraceResult,
     complaint: Complaint | None = None,
     victim: Account | None = None,
+    recipient: Account | None = None,
 ) -> str:
     metrics = trail.metrics
     if not trail.steps:
@@ -49,14 +50,22 @@ def generate_case_summary(
     splits = sum(e.type == "split" for e in trail.detections)
     terminals = {a for e in trail.detections if e.type == "terminal" for a in e.account_ids}
     context = (
-        f"For {complaint.complaint_id}, {victim.holder_name} "
+        f"In complaint {complaint.complaint_id}, dated "
+        f"{complaint.complaint_date.strftime('%d-%b-%Y')}, {complaint.victim_name} "
         f"({victim.masked_account}, {victim.bank_name}) reported "
-        f"{format_inr(complaint.amount_lost)} lost; "
+        f"{format_inr(complaint.amount_lost)} lost in a {complaint.scam_type} case. "
         if complaint is not None and victim is not None
         else ""
     )
+    first = trail.steps[0]
+    initial = (
+        f"The initial recorded transfer sent {format_inr(first.amount)} via {first.channel} "
+        f"to {recipient.masked_account} ({recipient.bank_name}). "
+        if recipient is not None
+        else ""
+    )
     return (
-        f"{context}from {format_date(trail.steps[0].timestamp)}, the FIFO trace seeded "
+        f"{context}{initial}From {format_date(first.timestamp)}, the FIFO trace seeded "
         f"{format_inr(metrics.seed_amount)} and reached {metrics.account_count} accounts "
         f"through {metrics.transaction_count} transfers. "
         f"It detected {splits} split events and {len(terminals)} probable endpoints; "

@@ -1,5 +1,6 @@
 import type { RiskResult } from '../../types';
 import { Badge } from '../common/Status';
+import { AnimatedValue } from '../common/AnimatedValue';
 
 export function RiskCard({ risk }: { risk: RiskResult }) {
   const color =
@@ -15,10 +16,15 @@ export function RiskCard({ risk }: { risk: RiskResult }) {
       <div className="risk-summary">
         <div
           className="score-ring"
-          style={{ background: `conic-gradient(${color} ${risk.total_score * 360}deg, #223046 0)` }}
+          style={{
+            background: `conic-gradient(${color} ${risk.total_score * 360}deg, #223046 0)`,
+            boxShadow: `0 0 14px ${color}18`,
+          }}
         >
           <div>
-            <strong style={{ color }}>{risk.total_score.toFixed(2)}</strong>
+            <strong style={{ color }}>
+              <AnimatedValue value={risk.total_score.toFixed(2)} />
+            </strong>
             <small>RISK SCORE</small>
           </div>
         </div>

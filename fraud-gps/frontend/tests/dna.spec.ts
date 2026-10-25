@@ -1,3 +1,4 @@
+import { openSettings, closeSettings } from './helpers/workspace';
 import { expect, test, type Page } from '@playwright/test';
 import type { Core } from 'cytoscape';
 import type { DNAReport } from '../src/types/dna';
@@ -8,10 +9,11 @@ import { mkdir } from 'node:fs/promises';
 
 type GraphElement = HTMLElement & { _cyreg: { cy: Core } };
 async function ready(page: Page) {
-  await page.goto('/');
+  await page.goto('/#/trace');
   await expect(page.getByRole('button', { name: 'Trace Funds', exact: true })).toBeEnabled();
 }
 async function trace(page: Page) {
+  await closeSettings(page);
   const response = page.waitForResponse(
     (r) => r.url().endsWith('/api/trace') && r.request().method() === 'POST',
   );
@@ -25,7 +27,7 @@ async function trace(page: Page) {
 }
 async function analyze(page: Page) {
   if (!(await page.getByRole('button', { name: 'Find Linked Cases', exact: true }).isVisible())) {
-    await page.getByRole('button', { name: 'Case controls', exact: true }).click();
+    await page.getByRole('tab', { name: 'Money Trail', exact: true }).click();
   }
   const response = page.waitForResponse((r) => /\/api\/dna\/BH-/.test(r.url()));
   await page.getByRole('button', { name: 'Find Linked Cases', exact: true }).click();
@@ -93,7 +95,7 @@ test('real DNA analysis, masked evidence and nonfinancial graph links', async ({
     );
   expect(transfers.sort()).toEqual(trail.steps.map((step) => step.tx_id).sort());
   await mkdir('../../docs/screenshots', { recursive: true });
-  await page.screenshot({ path: '../../docs/screenshots/ui-refresh-dna.png' });
+  await page.screenshot({ path: '../../docs/screenshots/modular-dna.png' });
   await panel.getByRole('button', { name: /Show all .* identifiers/ }).click();
   const eid = report.link_graph.edges[0].data.entity_ids[0];
   const match = panel.locator('.entity-match').filter({ hasText: eid });
@@ -109,9 +111,9 @@ test('real DNA analysis, masked evidence and nonfinancial graph links', async ({
   await expect(match).toContainText(
     report.entity_dna.entity_matches.find((item) => item.entity_id === eid)!.masked_value,
   );
-  await page.screenshot({ path: '../../docs/screenshots/ui-refresh-entity.png' });
+  await page.screenshot({ path: '../../docs/screenshots/modular-entity.png' });
   await match.locator('.entity-evidence > button').first().click();
-  await expect(page.getByRole('tab', { name: 'Account Inspector' })).toHaveAttribute(
+  await expect(page.getByRole('tab', { name: 'Money Trail' })).toHaveAttribute(
     'aria-selected',
     'true',
   );
@@ -161,7 +163,9 @@ test('DNA failure retries while retaining the investigation', async ({ page }) =
   await page.getByRole('button', { name: 'Find Linked Cases', exact: true }).click();
   const panel = page.getByRole('tabpanel', { name: 'Fraud DNA', exact: true });
   await expect(panel.getByRole('alert')).toBeVisible();
+  await page.getByRole('tab', { name: 'Money Trail', exact: true }).click();
   await expect(page.locator('#network-canvas')).toBeVisible();
+  await page.getByRole('tab', { name: 'Fraud DNA', exact: true }).click();
   await page.unroute('**/api/dna/BH-**');
   await panel.getByRole('button', { name: 'Retry', exact: true }).click();
   await expect(page.getByLabel('Fraud signature', { exact: true })).toBeVisible();
@@ -232,6 +236,7 @@ test('identifier links can be hidden, filtered, and dimmed during replay', async
   await ready(page);
   await trace(page);
   const report = await analyze(page);
+  await page.getByRole('tab', { name: 'Money Trail', exact: true }).click();
   await page.getByRole('button', { name: 'Hide DNA connections', exact: true }).click();
   let count = await page
     .locator('#network-canvas')
@@ -242,7 +247,9 @@ test('identifier links can be hidden, filtered, and dimmed during replay', async
     .locator('#network-canvas')
     .evaluate((el) => (el as GraphElement)._cyreg.cy.edges('.dna-link').length);
   expect(count).toBe(report.link_graph.edges.length);
+  await openSettings(page);
   await page.getByLabel('Show only suspicious nodes').check();
+  await closeSettings(page);
   const orphanCount = await page
     .locator('#network-canvas')
     .evaluate(
@@ -252,7 +259,9 @@ test('identifier links can be hidden, filtered, and dimmed during replay', async
           .filter((edge) => edge.source().empty() || edge.target().empty()).length,
     );
   expect(orphanCount).toBe(0);
+  await openSettings(page);
   await page.getByLabel('Show only suspicious nodes').uncheck();
+  await closeSettings(page);
   await expect(page.getByRole('button', { name: 'Replay Trail', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Replay Trail', exact: true }).click();
   await page.getByRole('button', { name: 'Pause timeline', exact: true }).click();
@@ -267,7 +276,9 @@ test('identifier links can be hidden, filtered, and dimmed during replay', async
   await expect(page.getByLabel('Fraud DNA summary')).toHaveCount(0);
   await page.getByRole('button', { name: 'Show full trail' }).click();
   await expect(page.getByLabel('Fraud DNA summary')).toBeVisible();
+  await openSettings(page);
   await page.getByLabel('Trace depth', { exact: true }).press('Home');
+  await closeSettings(page);
   await expect(page.locator('#network-canvas')).toHaveCount(0);
   await expect(page.getByLabel('Fraud DNA summary')).toHaveCount(0);
 });
@@ -298,12 +309,14 @@ test('mobile DNA panel and keyboard tabs stay within the viewport', async ({ pag
   await analyze(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole('tab', { name: 'Fraud DNA', exact: true }).press('ArrowLeft');
-  await expect(page.getByRole('tab', { name: 'Account Inspector', exact: true })).toBeFocused();
-  await page.getByRole('tab', { name: 'Account Inspector', exact: true }).press('End');
+  await expect(page.getByRole('tab', { name: 'Money Trail', exact: true })).toBeFocused();
+  await page.getByRole('tab', { name: 'Money Trail', exact: true }).press('End');
+  await expect(page.getByRole('tab', { name: 'Case Summary', exact: true })).toBeFocused();
+  await page.getByRole('tab', { name: 'Case Summary', exact: true }).press('ArrowLeft');
   await expect(page.getByRole('tab', { name: 'Fraud DNA', exact: true })).toBeFocused();
   await expect(page.getByLabel('Fraud signature', { exact: true })).toBeVisible();
   await page.screenshot({
-    path: '../../docs/screenshots/ui-refresh-mobile-dna.png',
+    path: '../../docs/screenshots/modular-mobile-dna.png',
     fullPage: true,
   });
 });

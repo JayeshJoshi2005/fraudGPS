@@ -1,3 +1,4 @@
+import { openSettings, closeSettings } from './helpers/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import type { Core } from 'cytoscape';
 import type { Complaint, TraceResult } from '../src/types';
@@ -6,10 +7,11 @@ import { mkdir } from 'node:fs/promises';
 type GraphElement = HTMLElement & { _cyreg: { cy: Core } };
 const api = 'http://127.0.0.1:8000/api';
 async function ready(page: Page) {
-  await page.goto('/');
+  await page.goto('/#/trace');
   await expect(page.getByRole('button', { name: 'Trace Funds', exact: true })).toBeEnabled();
 }
 async function trace(page: Page) {
+  await closeSettings(page);
   const response = page.waitForResponse(
     (r) => r.url() === `${api}/trace` && r.request().method() === 'POST',
   );
@@ -45,7 +47,7 @@ test('real API investigation, graph interactions, inspector and screenshots', as
   await expect(page.getByRole('button', { name: /Find Linked Cases/ })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Play timeline' })).toBeDisabled();
   await mkdir('../../docs/screenshots', { recursive: true });
-  await page.screenshot({ path: '../../docs/screenshots/ui-refresh-ready.png' });
+  await page.screenshot({ path: '../../docs/screenshots/modular-ready.png' });
   const result = await trace(page);
   expect(result.options.max_depth).toBe(4);
   const count = await page
@@ -58,7 +60,7 @@ test('real API investigation, graph interactions, inspector and screenshots', as
   await expect(inspector.getByLabel('Risk assessment')).toBeVisible();
   await expect(inspector).toContainText(complaints[0].suspect_account);
   await page.mouse.move(20, 20);
-  await page.screenshot({ path: '../../docs/screenshots/ui-refresh-inspector.png' });
+  await page.screenshot({ path: '../../docs/screenshots/modular-inspector.png' });
   const zoom = await page
     .locator('#network-canvas')
     .evaluate((el) => (el as GraphElement)._cyreg.cy.zoom());
@@ -72,18 +74,26 @@ test('real API investigation, graph interactions, inspector and screenshots', as
   await expect(page.getByText('Loading neighborhood…')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Clear expansion' })).toBeVisible();
   await page.getByRole('button', { name: 'Clear expansion' }).click();
-  await page.getByLabel('VIEW MODE').selectOption('Route');
+  await openSettings(page);
+  await page.getByLabel('Graph layout').selectOption('Route');
+  await closeSettings(page);
   await expect(page.getByText('Transaction route', { exact: true })).toBeVisible();
-  await page.getByLabel('VIEW MODE').selectOption('Cluster');
+  await openSettings(page);
+  await page.getByLabel('Graph layout').selectOption('Cluster');
+  await closeSettings(page);
   await expect(page.getByText('Bank clusters', { exact: true })).toBeVisible();
-  await page.getByLabel('VIEW MODE').selectOption('Graph');
+  await openSettings(page);
+  await page.getByLabel('Graph layout').selectOption('Graph');
+  await closeSettings(page);
   await page.getByRole('button', { name: 'Browse records' }).click();
   const records = page.getByLabel('Accessible graph records');
   await records.getByRole('button').filter({ hasText: result.steps[0].tx_id }).click();
   await expect(inspector.getByText('TRANSFER DETAILS', { exact: true })).toBeVisible();
   await expect(inspector).toContainText(result.steps[0].channel);
   await expect(inspector).toContainText('IST');
+  await openSettings(page);
   await page.getByLabel('Show only suspicious nodes').check();
+  await closeSettings(page);
   const visible = await page
     .locator('#network-canvas')
     .evaluate((el) =>
@@ -127,23 +137,29 @@ test('depth and amount filters invalidate old results and support empty trails',
   const small = complaints.find((c) => Number(c.amount_lost) < 100000)!;
   await ready(page);
   await trace(page);
+  await openSettings(page);
   await page.getByLabel('Trace depth', { exact: true }).focus();
+  await openSettings(page);
   await page.getByLabel('Trace depth', { exact: true }).press('Home');
+  await closeSettings(page);
   await expect(page.locator('#network-canvas')).toHaveCount(0);
   const result = await trace(page);
   expect(result.options.max_depth).toBe(1);
   expect(result.steps).toHaveLength(1);
   await page.getByLabel('SELECT COMPLAINT').selectOption(small.complaint_id);
+  await openSettings(page);
   await page.getByLabel('Minimum amount', { exact: true }).focus();
+  await openSettings(page);
   await page.getByLabel('Minimum amount', { exact: true }).press('End');
+  await closeSettings(page);
   await trace(page);
   await expect(page.getByText(/No transfers meet the selected minimum/)).toBeVisible();
 });
 
 test('backend unavailable and inspector failure can be retried', async ({ page, request }) => {
   await page.route('**/api/graph/full', (route) => route.abort('failed'));
-  await page.goto('/');
-  await expect(page.getByRole('alert')).toContainText('Could not reach');
+  await page.goto('/#/trace');
+  await expect(page.getByRole('alert')).toContainText('Backend connection failed');
   await page.unroute('**/api/graph/full');
   await page.getByRole('button', { name: 'Retry', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Trace Funds', exact: true })).toBeEnabled();
@@ -185,7 +201,10 @@ test('switching cases discards a delayed old trace', async ({ page, request }) =
   await ready(page);
   await page.getByRole('button', { name: 'Trace Funds', exact: true }).click();
   await seen;
-  await page.getByLabel('SELECT COMPLAINT').selectOption(complaints[1].complaint_id);
+  await expect(page.getByLabel('SELECT COMPLAINT')).toBeEnabled({ timeout: 1500 });
+  await page
+    .getByLabel('SELECT COMPLAINT')
+    .selectOption(complaints[1].complaint_id, { timeout: 1500 });
   const next = await trace(page);
   release();
   await done;
@@ -202,7 +221,7 @@ test('small screen remains usable without horizontal overflow', async ({ page })
   await ready(page);
   await trace(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: '../../docs/screenshots/ui-refresh-mobile.png', fullPage: true });
+  await page.screenshot({ path: '../../docs/screenshots/modular-mobile.png', fullPage: true });
 });
 
 test('delayed account evidence cannot replace a newer selection', async ({ page, request }) => {

@@ -2,7 +2,7 @@ import { Expand, Fingerprint, ScanSearch, X } from 'lucide-react';
 import type { GraphData, Selection, TraceResult } from '../../types';
 import { useRisk } from '../../hooks/useRisk';
 import { formatCurrency, formatDate, formatTime } from '../../utils/formatters';
-import { Badge, ErrorState, Loading } from '../common/Status';
+import { Badge, ErrorState, EvidenceSkeleton } from '../common/Status';
 import { RiskCard } from '../cards/RiskCard';
 
 interface Props {
@@ -37,9 +37,9 @@ export function InspectorPanel({
   return (
     <section
       className="account-inspector"
-      role="tabpanel"
+      role="region"
       id="account-panel"
-      aria-labelledby="account-tab"
+      aria-label="Account inspector"
     >
       <div className="panel-heading">
         <ScanSearch size={17} />
@@ -145,8 +145,13 @@ export function InspectorPanel({
                   text={node?.role === 'Cash-Out' ? 'Probable endpoint' : node?.role || 'Account'}
                 />
               </div>
-              {detail.loading && <Loading>Loading account evidence…</Loading>}
-              {detail.error && <ErrorState message={detail.error} retry={detail.retry} />}
+              {detail.loading && <EvidenceSkeleton>Loading account evidence…</EvidenceSkeleton>}
+              {detail.error && (
+                <ErrorState
+                  message={`Unable to load risk data. ${detail.error}`}
+                  retry={detail.retry}
+                />
+              )}
               {detail.account && detail.risk && (
                 <>
                   <dl className="details-grid">

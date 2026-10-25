@@ -1,4 +1,4 @@
-# Fraud GPS Backend — Analysis, inspector, and Fraud DNA APIs
+# Fraud GPS Backend — Analysis, DNA, summaries, and PDF reports
 
 ## Prerequisites and setup
 
@@ -56,6 +56,13 @@ From this directory:
 .\.venv\Scripts\python.exe smoke_api.py
 ```
 
-The `.pytest-tmp*` directories are disposable test output. The 107 tests cover data integrity, reproducibility, alternate datasets, exact money, malformed records, startup, CORS, chronological tracing, cycles, splits/merges, layering, amount/time bounds, risk evidence, cache isolation, API agreement, account details/forwarding statistics, timeline integrity, trail statistics, and Phase 4 source-derived DNA/campaigns/nonfinancial links. No coverage percentage is mandated. Format changes using `python -m ruff format .` from the virtual environment. The smoke script starts a temporary loopback Uvicorn server on an available port, waits for readiness, checks all Phase 1 endpoints, and stops that server.
+The `.pytest-tmp*` directories are disposable test output. The **122 tests** cover source integrity, tracing, risk, timeline/DNA, summaries, review-action policies, actual PDF text/font/pagination, launcher data preservation, owned Windows process-tree shutdown, and a complete independent replacement-data pipeline. The Windows cleanup regression needs permission to stop its own child processes and is skipped on other operating systems. The development-only PyMuPDF 1.28.2 dependency parses and renders reports; runtime generation uses ReportLab 5.1.0. Licensed DejaVu fonts are bundled under `app/assets/fonts`. Format with `python -m ruff format .`. The smoke script checks Phase 1 endpoints on a temporary loopback server.
 
-Phases 1–4 are verified; see the [Phase 4 review](../../docs/PHASE_4_REVIEW.md), [frontend guide](../frontend/README.md), and [DNA contract](../../docs/PHASE_4_CONTRACT.md). Tracing is a bounded FIFO attribution hypothesis, and risk/DNA scores are explainable heuristics. DNA compares the same trace options across all cases, excludes self, masks display identifiers, and computes neutral inferred families without generator truth or prepared scores. New dataset/service instances invalidate option-context caches. Identifier relations are separate from money transfers. PDF reports remain Phase 5 and require explicit user direction.
+For the full local demo use the root `start_demo.bat`; see the [demo guide](../../docs/DEMO_GUIDE.md).
+Measure fresh-process ordered first-use and warm HTTP latency with
+`python benchmark_demo.py --output ../../docs/performance/modular-api.json`.
+This starts/stops its own isolated loopback server and changes no source data.
+Both smoke and benchmark commands stop their owned server tree on Windows so
+virtual-environment Python children cannot retain a listening port.
+
+Phases 1–6 are verified; see the [Phase 6 review](../../docs/PHASE_6_REVIEW.md), [frontend guide](../frontend/README.md), and [report contract](../../docs/PHASE_5_CONTRACT.md). Tracing remains a FIFO hypothesis, and risk/DNA are measured heuristics. Reports and UI summaries share selected options and evidence. Actions are review suggestions only; source addresses do not establish withdrawal locations, and methods remain unknown. Replacing datasets requires restarting; expected-version report requests reject stale data.

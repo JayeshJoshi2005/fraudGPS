@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { DNAReport, EntityDNA, CampaignList } from '../types/dna';
+import type { CaseSummary } from '../types/reports';
 import type {
   AccountDetail,
   Complaint,
@@ -78,7 +79,7 @@ export function errorMessage(error: unknown): string {
   if (axios.isAxiosError(error))
     return (
       error.response?.data?.error?.message ||
-      'Could not reach the investigation API. Check that the backend is running, then retry.'
+      'Backend connection failed. Start the server and refresh, or retry.'
     );
   return error instanceof Error ? error.message : 'The request could not be completed.';
 }
@@ -91,3 +92,41 @@ export const fetchEntityDNA = async (id: string, options: TraceOptions, signal: 
     .data;
 export const fetchCampaigns = async (options: TraceOptions, signal: AbortSignal) =>
   (await api.get<CampaignList>('/dna/campaigns', { params: options, signal })).data;
+
+export const fetchCaseSummary = async (id: string, options: TraceOptions, signal: AbortSignal) =>
+  (
+    await api.get<CaseSummary>(`/report/${encodeURIComponent(id)}/summary`, {
+      params: options,
+      signal,
+    })
+  ).data;
+
+export async function fetchReport(trace: TraceResult, signal: AbortSignal) {
+  try {
+    const response = await api.post<Blob>(
+      `/report/${encodeURIComponent(trace.complaint_id!)}`,
+      {
+        ...trace.options,
+        expected_dataset_version: trace.dataset_version,
+      },
+      { responseType: 'blob', signal },
+    );
+    return {
+      blob: response.data,
+      version: response.headers['x-dataset-version'],
+      type: response.headers['content-type'],
+    };
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.data instanceof Blob) {
+      const value = await error.response.data.text();
+      let message: string | undefined;
+      try {
+        message = JSON.parse(value)?.error?.message;
+      } catch {
+        /* Non-JSON failures use the standard API message. */
+      }
+      if (message) throw new Error(message);
+    }
+    throw error;
+  }
+}

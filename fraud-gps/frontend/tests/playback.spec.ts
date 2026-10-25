@@ -1,3 +1,4 @@
+import { openSettings, closeSettings } from './helpers/workspace';
 import { test, expect, type Page } from '@playwright/test';
 import type { Core } from 'cytoscape';
 import type { Complaint, TimelineEvent, TraceResult } from '../src/types';
@@ -7,10 +8,11 @@ import { mkdir } from 'node:fs/promises';
 type GraphElement = HTMLElement & { _cyreg: { cy: Core } };
 const api = 'http://127.0.0.1:8000/api';
 async function ready(page: Page) {
-  await page.goto('/');
+  await page.goto('/#/trace');
   await expect(page.getByRole('button', { name: 'Trace Funds', exact: true })).toBeEnabled();
 }
 async function trace(page: Page) {
+  await closeSettings(page);
   const response = page.waitForResponse(
     (r) => r.url() === `${api}/trace` && r.request().method() === 'POST',
   );
@@ -60,7 +62,9 @@ async function snapshot(page: Page) {
 test('play/pause, speed cadence, steps, scrubbing and replay share one state', async ({ page }) => {
   await page.clock.install({ time: '2026-10-23T00:00:00Z' });
   await ready(page);
+  await openSettings(page);
   await page.getByLabel('Trace depth', { exact: true }).press('ArrowRight');
+  await closeSettings(page);
   const { result, events } = await trace(page);
   await freeze(page);
   const slider = page.getByRole('slider', { name: 'Timeline event', exact: true });
@@ -132,7 +136,9 @@ test('event effects, role labels and cards follow the rendered viewport', async 
   });
   await page.clock.install({ time: '2026-10-23T00:00:00Z' });
   await ready(page);
+  await openSettings(page);
   await page.getByLabel('Trace depth', { exact: true }).press('ArrowRight');
+  await closeSettings(page);
   const { result, events } = await trace(page);
   await freeze(page);
   const split = events.find((e) => e.type === 'split')!;
@@ -172,7 +178,7 @@ test('event effects, role labels and cards follow the rendered viewport', async 
   ).toBeLessThan(2);
   await page.getByRole('button', { name: 'Fit graph' }).click();
   await mkdir('../../docs/screenshots', { recursive: true });
-  await page.screenshot({ path: '../../docs/screenshots/ui-refresh-story.png' });
+  await page.screenshot({ path: '../../docs/screenshots/modular-story.png' });
   for (const type of ['rapid_forward', 'terminal']) {
     const event = events.find((e) => e.type === type)!;
     await seek(page, event.step);
@@ -189,7 +195,7 @@ test('event effects, role labels and cards follow the rendered viewport', async 
   await expect(page.locator('.story-complete')).toContainText(
     `${result.statistics.probable_endpoint_account_ids.length} probable endpoints`,
   );
-  await page.screenshot({ path: '../../docs/screenshots/ui-refresh-complete.png' });
+  await page.screenshot({ path: '../../docs/screenshots/modular-complete.png' });
   const network = page.locator('#network-canvas');
   const nodePoint = await network.evaluate(
     (el, id) => (el as GraphElement)._cyreg.cy.getElementById(id).renderedPosition(),
@@ -205,7 +211,9 @@ test('event effects, role labels and cards follow the rendered viewport', async 
   const expanded = (await snapshot(page)).filter((element) => !traced.has(element.id));
   expect(expanded.length).toBeGreaterThan(0);
   expect(expanded.every((element) => element.classes.includes('story-dim'))).toBe(true);
+  await openSettings(page);
   await page.getByLabel('Show only suspicious nodes').check();
+  await closeSettings(page);
   await expect(page.getByLabel('Replay progress', { exact: true })).toContainText(
     `${events.length} / ${events.length}`,
   );
@@ -328,7 +336,9 @@ test('case/options changes clear timers and hidden tabs pause playback', async (
   await trace(page);
   await expect(page.getByLabel('Replay progress', { exact: true })).toContainText('OVERVIEW');
   await page.getByRole('button', { name: 'Replay Trail', exact: true }).click();
+  await openSettings(page);
   await page.getByLabel('Trace depth', { exact: true }).press('Home');
+  await closeSettings(page);
   await page.clock.runFor(5000);
   await expect(page.locator('.story-event-card')).toHaveCount(0);
   await expect(page.locator('#network-canvas')).toHaveCount(0);
@@ -374,7 +384,7 @@ test('mobile replay and empty results remain usable with reduced motion', async 
   await expect(page.getByLabel('Story event', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({
-    path: '../../docs/screenshots/ui-refresh-mobile-story.png',
+    path: '../../docs/screenshots/modular-mobile-story.png',
     fullPage: true,
   });
   const cases = (await (await request.get(`${api}/complaints`)).json()).items as Complaint[];
@@ -382,7 +392,9 @@ test('mobile replay and empty results remain usable with reduced motion', async 
   await page
     .getByLabel('SELECT COMPLAINT')
     .selectOption(cases.find((c) => Number(c.amount_lost) < 100000)!.complaint_id);
+  await openSettings(page);
   await page.getByLabel('Minimum amount', { exact: true }).press('End');
+  await closeSettings(page);
   await page.getByRole('button', { name: 'Trace Funds', exact: true }).click();
   await expect(page.getByText(/No transfers meet the selected minimum/)).toBeVisible();
   await expect(

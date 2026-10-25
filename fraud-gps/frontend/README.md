@@ -1,10 +1,15 @@
-# Fraud GPS frontend — Phases 2–4
+# Fraud GPS frontend — Phases 2–6
 
 React/TypeScript investigation workspace with a live Cytoscape transaction graph.
 Vite serves development on port 3000; the FastAPI backend runs on port 8000.
 Everything uses synthetic records from the backend. No cloud service is required.
 
 ## Start locally
+
+For the ready demo, run `start_demo.bat` from the repository root. It builds this
+frontend and starts both services after validation. See the
+[demo guide](../../docs/DEMO_GUIDE.md) for prerequisites, offline/reuse/stop options,
+and the nine-minute recording outline. Manual development commands follow.
 
 Tested on Windows with Node **22.20.0**, npm **10.9.3**, and Python **3.13.7**.
 Node 22.12 or newer is required. See the [backend guide](../backend/README.md) if
@@ -32,10 +37,19 @@ Dependencies are pinned in `package.json` and `package-lock.json`.
 
 ## Investigation flow
 
-1. Select a complaint. The victim, authoritative masked account label, reported loss,
-   scam type, date, and source description populate the case card.
-2. Choose depth (1–7; default 4) and minimum transfer (INR 0–1,00,000; default 100).
-   Click **Trace Funds**. Changing either option clears the old result before retracing.
+The application opens in **Cases**, with a searchable case library, scam-type
+filter, source totals, and a selected complaint. Navigation separates **Cases**,
+**Money Trail**, **Fraud DNA**, and **Case Summary**. Desktop has a side rail;
+mobile keeps those sections in a bottom navigation bar. Section URLs use hashes
+and support browser back/forward. The case, analysis, graph camera, and review
+marks survive section changes; leaving the trail pauses playback.
+
+1. Open a case file or use **ACTIVE CASE** in the header. Its source details are
+   available in the case settings drawer; account labels remain authoritative masks.
+2. Open **Case controls** (the sliders icon). Choose depth (1–7; default 4), minimum
+   transfer (INR 0–1,00,000; default 100), and forwarding window (1–168 hours;
+   default 24). **Trace with these options** closes the drawer and opens Money Trail.
+   Changing analysis options clears old results before retracing.
 3. Inspect an account by clicking a node; inspect a transfer by clicking an edge.
    **Browse records** provides equivalent keyboard-accessible account/transfer buttons.
 4. Right-click a node or use **Expand neighborhood** in the inspector to load its
@@ -51,17 +65,18 @@ names. Multiple matches retain stable internal IDs to disambiguate masking colli
 Zoom, pan, hover details, fit, and reset-layout controls are functional. Risk controls
 node border color/size; victims are blue diamonds and probable endpoints are dark squares with
 risk-colored borders. Parallel transfers remain separate edges. Labels stay at 13 rendered
-pixels while zooming. **Cases** toggles the case controls; **Inspector** toggles evidence;
-the expand icon gives the graph the workspace. Selecting an account or analyzing DNA
-opens the inspector. Compact screens show one side panel at a time. Mobile starts
-with a readable part of the trail; drag to explore or use **Fit graph** for the full network.
+pixels while zooming. Account evidence opens beside the graph, or as a dismissible
+overlay on mobile. The expand icon temporarily hides navigation for a focused graph.
+DNA and summaries have their own pages. Mobile starts with a readable part of the
+trail; drag to explore or use **Fit graph** for the full network. Settings trap
+keyboard focus, close with Escape, and restore focus to the opening control.
 
 The inspector shows source account details, bounded risk components and formulas,
 source evidence IDs, inflow/outflow, unique counterparties, linked complaints, and
 amount-weighted observed FIFO forwarding time. No observed forwarding displays
 **Not observed**. Account age includes its observation date and does not imply dormancy.
 
-6. Click **Replay Trail** in the sidebar or Play in the bottom strip. Replay starts
+6. Click **Replay Trail** in the graph toolbar or Play in the bottom strip. Replay starts
    with the victim and follows the ordered API events. Pause, previous/next, the
    scrubber, event markers, and milestone pills all use the same event sequence.
    Choose 0.5x, 1x, 2x, or 3x. Replay restarts; bottom Play resumes a paused trail
@@ -70,7 +85,7 @@ amount-weighted observed FIFO forwarding time. No observed forwarding displays
    Cards follow zoom/pan and remain inside the canvas. Role tags appear below
    accounts involved in the current event; overview shows a role tag only on the selected account.
    Completion shows full-trail counts, even with display filters.
-   **Full trail statistics** in the sidebar counts seeded funds once and deduplicates
+   **Full trail statistics** in case settings counts seeded funds once and deduplicates
    endpoint accounts. Hover each statistic for its definition.
 
 Replay is event-paced (one second per event at 1x), with IST timestamps showing the
@@ -88,13 +103,13 @@ inferred endpoints, with unknown withdrawal methods. The existing demo dataset h
 no qualifying layering detection; that renderer is verified with an independent
 chain fixture. The generator and datasets are unchanged.
 
-8. Click **Find Linked Cases** after a nonempty trace. The right panel opens the
-   **Fraud DNA** tab, with the signature ring, exact component weights, inferred
-   family, source loss totals, masked identifiers, similar cases, behavior, and
-   topology. The bottom trace statistics remain scoped to the original trace.
+8. Click **Find Linked Cases** after a nonempty trace, or open the **Fraud DNA**
+   section and click **Analyze Fraud DNA**. The full page groups the signature,
+   component weights, inferred family, identifiers, similar cases, behavior, and
+   topology. **View connections on graph** returns to the trail with its distinct links.
 9. Expand an identifier to see current accounts, external peers, and other case IDs.
-   Its drawn relations highlight in purple. Select an account for its risk/source
-   inspector, or select a similar case to load that case's real trace. Tabs retain
+   Its relations highlight in purple when viewed on the graph. Select an account
+   to return to its inspector, or a similar case to load its real trace. Sections retain
    successful analysis. Case/options/retrace/reload discard it and cancel requests.
 10. Purple dashed graph lines are **shared identifiers**, with no arrowheads or
     financial fields. Inspect one through **Browse records** for source IDs.
@@ -115,11 +130,38 @@ The demo derives families of 30, 16, and 4 cases. The first case at four hops ha
 relations. Lone Wolf has three other same-family cases sharing reused accounts,
 with no external relation to other families. No fake self-edge is drawn.
 
-Reports and alert navigation remain future phases. The header risk count is derived
-from the full dataset. Sidebar other-complaint counts use account links; DNA's linked
-case count specifically uses shared identifiers. All records remain synthetic.
+11. Open the **Case Summary** section or its shortcut below the graph. The narrative
+    and recommended review actions come from the backend at the active trace options.
+    Checkmarks persist across tab switches for this trace, reset on a new trace,
+    and record review only. Supporting evidence opens accounts and related cases.
+12. Click the header's **High-risk alerts** badge for ranked dataset-wide accounts,
+    measured reasons, and **Investigate** navigation. This expands/selects/centers an
+    account even when outside the current trail. Alerts can retry failed requests.
+13. **Generate Report** in the header or **Download investigation PDF** in the summary
+    exports the active trace. The button shows generation progress, downloads a named
+    PDF, and reports success or failure. Failed exports can retry. Case/filter changes
+    cancel stale downloads; invalid content and dataset versions are rejected.
+
+Newly played events produce up to four notifications, each lasting four seconds.
+They use observed split amounts, dataset-wide risks, account complaint links, and
+probable endpoints. Seeking does not backfill historical notifications. Endpoint
+messages retain unknown withdrawal method. Timers clear on case changes/unmount.
+
+The header keyboard icon reveals shortcuts on hover or click: **Space** plays/pauses,
+**Left/Right** steps, **F** fits, **R** replays, and **Escape** deselects. Typing,
+native controls, modifier combinations, handled events, and repeated keys are respected.
+
+The header risk count is dataset-wide. Sidebar other-complaint counts use account
+links; DNA's linked-case count uses shared identifiers. Reports have six sections
+and may span additional pages for long evidence tables. No action freezes accounts,
+requests records, or contacts agencies. All records remain synthetic.
 
 ## Configuration and data integrity
+
+`App.tsx` assembles independent workspace modules. `useInvestigationWorkspace`
+owns shared state and delegates analysis to the existing typed hooks.
+`useWorkspaceNavigation` owns hash/history navigation. Views live in
+`src/components/workspace/`; the obsolete all-purpose sidebar has been removed.
 
 Copy `.env.example` to `.env.local` to override `VITE_API_BASE_URL`; default:
 `http://127.0.0.1:8000/api`. Vite reads it at startup/build time. Restart after editing.
@@ -150,11 +192,12 @@ npm.cmd run test:e2e
 ```
 
 - Build checks strict TypeScript and emits `dist/`. The graph renderer loads separately.
-- Vitest: 49 tests for exact formatting, timezone boundaries, masks, graph filtering,
+- Vitest: 99 tests for exact formatting, timezone boundaries, masks, graph filtering,
   parallel-edge preservation, attribution preservation, timeline integrity, pure prefix
   reconstruction, controls/cadence, layering cascade cleanup, card positioning,
-  DNA validation, midnight windows, and nonfinancial relation preservation/filtering.
-- Playwright: 28 tests using installed **Google Chrome**, the actual local backend, and
+  DNA validation, midnight windows, nonfinancial relation preservation/filtering,
+  and action-specific account/entity/transfer/case evidence validation.
+- Playwright: 50 tests using installed **Google Chrome**, the actual local backend, and
   the production frontend. The script builds first, then serves `npm run preview`.
   Stop other servers on ports 8000 and 3000 first; tests own and stop their servers.
   Tests include node clicks, right-click expansion, inspector, record selection, layouts,
@@ -165,7 +208,16 @@ npm.cmd run test:e2e
   DNA tests cover real analysis/campaigns, masked evidence, highlighted relations,
   nonfinancial inspection, similar-case navigation, retry, stale responses, dataset
   and score mismatches, graph filtering/hiding/replay, independent Lone Wolf, mobile
-  layout, and keyboard tab navigation. Normal flows check browser errors/warnings.
+  layout, and keyboard tab navigation. Phase 5 adds actual PDF download/failure/retry,
+  content/version checks, stale download/summary cancellation, local checklist state,
+  alert navigation, guarded shortcuts, toast lifecycle, and mobile/empty-trail reports.
+  Normal flows check browser errors/warnings.
+  Phase 6 adds three largest-Gamma rehearsals, skeleton/large-currency/reduced-motion
+  checks, a measured dense 50-node render, and an isolated replacement-data server
+  through the real UI/PDF pipeline. Prior phase artifacts are preserved.
+  Modular-workspace checks cover case filtering, native history, graph-camera and
+  checklist preservation, drawer focus/Escape, mobile navigation, deep-link recovery,
+  and paused playback across sections. Existing flows use the settings drawer.
 - Prettier is the frontend formatter (`npm.cmd run format`). No separate frontend linter
   is configured. Backend Ruff remains unchanged.
 

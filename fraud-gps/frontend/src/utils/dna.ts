@@ -41,9 +41,10 @@ export function validateDNA(report: DNAReport, trace: TraceResult) {
     Math.abs(combined(report.component_scores) - report.signature_score) > 1e-9
   )
     fail();
-  const traceAccounts = new Set(
-    trace.steps.flatMap((step) => [step.from_account, step.to_account]),
-  );
+  const traceAccounts = new Set([
+    trace.start_account,
+    ...trace.steps.flatMap((step) => [step.from_account, step.to_account]),
+  ]);
   if (
     report.entity_dna.scope_account_ids.some((id) => !traceAccounts.has(id)) ||
     report.entity_dna.linked_complaint_ids.includes(trace.complaint_id!)

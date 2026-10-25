@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { TimelineEvent, PlaybackState } from '../types';
 import {
   eventDelay,
@@ -10,16 +10,19 @@ import {
 export function usePlayback(events: TimelineEvent[]) {
   const [session, setSession] = useState({ source: events, state: initialPlayback });
   const state: PlaybackState = session.source === events ? session.state : initialPlayback;
-  function dispatch(action: PlaybackAction) {
-    setSession((old) => ({
-      source: events,
-      state: reducePlayback(
-        old.source === events ? old.state : initialPlayback,
-        action,
-        events.length,
-      ),
-    }));
-  }
+  const dispatch = useCallback(
+    (action: PlaybackAction) => {
+      setSession((old) => ({
+        source: events,
+        state: reducePlayback(
+          old.source === events ? old.state : initialPlayback,
+          action,
+          events.length,
+        ),
+      }));
+    },
+    [events],
+  );
   useEffect(() => {
     if (!state.playing || !events.length) return;
     const timer = window.setTimeout(

@@ -2,7 +2,7 @@
 
 ## Status and intent
 
-Phases 0–4 implement configuration, schemas, data access, synthetic generation, graph projections, chronological tracing, risk, explanations, summaries, investigation APIs, the React/TypeScript investigation UI, timeline playback, and source-derived Fraud DNA/campaign matching. Reports remain a later phase. Analysis is independent of HTTP, UI, storage format, hosting provider, and coding assistant.
+Phases 0–6 implement configuration, schemas, data access, synthetic generation, graphs, tracing, risk, explanations, timelines, source-derived Fraud DNA, investigation summaries, evidence-linked review actions, PDF reports, and local demo reliability. The v0.7 React workspace separates cases, graph investigation, DNA, and summaries while sharing evidence and analysis state. Analysis is independent of HTTP, UI, storage format, hosting provider, and coding assistant.
 
 ## Components and data flow
 
@@ -28,8 +28,10 @@ flowchart LR
 - `engines/fraud_gps.py`: chronological trace and structural/temporal detections; retain transaction evidence, traversal limits, and reasons.
 - `engines/risk_scorer.py`: normalized features, explicit weights, bounded scores, and cache lifecycle.
 - `engines/fraud_dna.py`: implemented cross-case entity, behavioral, and topology comparisons, weighted signatures, inferred families, and factual identifier relations; independent from base risk to avoid circular dependencies. Bounded option-context caches belong to one dataset-scoped instance; `models/dna.py` holds the public contracts.
-- `engines/explainer.py`: text and recommendations derived from structured evidence; shared by UI summaries and reports.
-- `engines/service.py`: implemented dataset-scoped orchestration. Builds default complaint traces and cached risk results; renders the same trace into summaries, graphs, and timeline events. Recommendations remain Phase 5.
+- `engines/explainer.py`: factual narratives and formatting from structured evidence; shared by tracing, summaries, and reports.
+- `engines/investigation_summary.py`: case-scoped flagged accounts and deterministic review actions with source references. `models/reports.py` holds the shared summary and export request contracts.
+- `engines/report_pdf.py`: ReportLab layout over shared summary results; bundled fonts, escaped source text, pagination, repeated tables, and no server-side report persistence.
+- `engines/service.py`: dataset-scoped orchestration, default traces, cached risk/DNA, and shared graph/timeline/summary/report results.
 - `routes/`: input validation, status codes, and response serialization. Keep reusable calculations outside routes, including report assembly as it grows.
 
 Engines should accept data/context explicitly and return structured results without depending on FastAPI requests or frontend state. Load shared context during application startup. Key caches by dataset version and relevant query parameters; never reuse stale analysis after regeneration.
@@ -65,6 +67,42 @@ replay honor edge kind. The pure dataset-version helper is shared by API, graph,
 and DNA validation without importing browser HTTP configuration into tests.
 See [Phase 4 contract](PHASE_4_CONTRACT.md) for inference and cache rules.
 
+Phase 5 adds `useCaseSummary` with complete-trace/version checks and cancellable
+requests; `useReportDownload` validates PDF responses and releases browser object
+URLs. `CaseSummaryPanel` and `useReviewChecklist` keep review marks scoped to the
+current trace. `AlertPanel` uses dataset-wide rankings and navigates through the
+same selection/expansion path as search. `useNotifications` and its playback
+adapter own bounded four-second timers and deduplication. Keyboard eligibility
+is pure; the hook avoids native controls and dispatches existing playback/graph
+actions. The three inspector tabs preserve the minimal, taller workspace.
+See [Phase 5 contract](PHASE_5_CONTRACT.md).
+
+Phase 6 adds evidence skeletons, exact integer-paise count-up with reserved widths,
+reduced-motion-aware graph entrances, and safe notification stacking. Dense graphs
+retain all edges while bounding animation work. The root Windows launcher uses a
+standard-library Python preflight, builds the production frontend, polls readiness,
+verifies reused app/version/dataset/build identity, and records process creation
+times/paths for owned shutdown. See [the Phase 6 review](PHASE_6_REVIEW.md) for
+measured local performance and [the demo guide](DEMO_GUIDE.md) for operation.
+
+The modular redesign composes `CaseLibrary`, `TraceWorkspace`,
+`ConnectionsWorkspace`, and `ReportWorkspace` from a small `App`. Shared
+`useInvestigationWorkspace` owns the existing analysis hooks, selection, expansion,
+playback, checklist, and report state. `useWorkspaceNavigation` handles hash routes
+and browser history; keyboard navigation uses the same route actions. Page modules
+remain mounted in hidden slots so navigation preserves review state and the graph
+camera. `GraphCanvas` ignores zero-size observations, defers layouts while hidden,
+and resizes without resetting an unchanged camera when reactivated. Leaving the
+trail pauses playback and clears story notifications. Settings use a modal drawer
+with focus trapping, Escape, and focus restoration; evidence inspection remains
+contextual to the trail. Case/option changes still abort and clear obsolete evidence.
+
+Launcher ownership stores the known executable path at process creation and checks
+PID/path/start time before stopping its process tree. `backend/demo_process.py`
+similarly stops the tree of a live owned `Popen` for smoke/benchmark commands on
+Windows, covering virtual-environment redirector children. Other operating systems
+use terminate/wait/kill. Neither helper enumerates or stops unrelated services.
+
 ## Contract rules
 
 Phase 1 rules are finalized in [PHASE_1_CONTRACT.md](PHASE_1_CONTRACT.md) and the
@@ -98,7 +136,9 @@ Tracing uses a bounded chronological FIFO attribution hypothesis with explicit p
 | 4 (implemented) | `GET /api/dna/campaigns`; `/api/dna/entity/{account_id}`; `/api/dna/{complaint_id}` |
 | 5 | `POST /api/report/{complaint_id}` returning a downloadable PDF |
 
-Phase 1 endpoints are implemented, with `/risk/top` declared before the dynamic account route. Trace depth, minimum amount, windows, and summary exposure are defined in the API guide. DNA endpoints are implemented with `/dna/campaigns` and `/dna/entity/{account_id}` before the dynamic complaint route. Report endpoints remain reserved for Phase 5.
+Risk and DNA static routes precede dynamic account/complaint routes. Trace options
+and summary exposure follow the API guide. Report summary and PDF endpoints are
+implemented; they share structured results and enforce the requested dataset version.
 
 ## Local operation and future portability
 

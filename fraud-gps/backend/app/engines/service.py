@@ -4,6 +4,7 @@ from app.engines.explainer import format_date, format_inr, generate_case_summary
 from app.engines.fraud_dna import FraudDNA
 from app.engines.fraud_gps import FraudGPS
 from app.engines.graph_builder import GraphBuilder
+from app.engines.investigation_summary import build_case_summary
 from app.engines.risk_scorer import RiskScorer
 from app.models.analysis import (
     AccountDetail,
@@ -50,6 +51,9 @@ class AnalysisService:
             raise KeyError(f"Unknown complaint: {complaint_id}")
         return self.graph.complaints[complaint_id]
 
+    def case_summary(self, complaint_id: str, options: TraceOptions):
+        return build_case_summary(self, complaint_id, options)
+
     def account_detail(self, account_id: str) -> AccountDetail:
         stats = self.graph.get_node_data(account_id)
         direct = {c.complaint_id for c in self.graph.get_linked_complaints(account_id)}
@@ -93,7 +97,10 @@ class AnalysisService:
         result.roles = {a: self.risk.classify_node_role(a, result) for a in sorted(nodes)}
         complaint = self.complaint(request.complaint_id) if request.complaint_id else None
         victim = self.graph.dataset.accounts_by_id[result.start_account]
-        result.summary = generate_case_summary(result, complaint, victim)
+        recipient = (
+            self.graph.dataset.accounts_by_id[result.steps[0].to_account] if result.steps else None
+        )
+        result.summary = generate_case_summary(result, complaint, victim, recipient)
         result.summary_transaction_ids = [s.tx_id for s in result.steps]
         result.statistics = self.trail_statistics(result)
         return result

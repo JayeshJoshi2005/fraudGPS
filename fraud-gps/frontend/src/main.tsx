@@ -4,6 +4,9 @@ import App from './App';
 import './styles.css';
 import './story.css';
 import './dna.css';
+import './reports.css';
+import './polish.css';
+import './workspace.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

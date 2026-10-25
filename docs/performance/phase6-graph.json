@@ -1,0 +1,17 @@
+{
+  "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "dataset_version": "d0d8a3c9bcbda6f0ec298414400312d6e9011559c357987e28d34ee945846504",
+  "node_count": 50,
+  "edge_count": 1864,
+  "conditions": "Production bundle; three page loads in one browser context, first lazy-renderer load cold, subsequent HTTP cache warm. Includes click, real trace HTTP, layout, entrance, and two animation frames. Graph fixture is 50 source accounts and all transfers between them.",
+  "samples_ms": [
+    1372.7000000029802,
+    1087.2999999970198,
+    1390.800000011921
+  ],
+  "target_ms": 2000
+}

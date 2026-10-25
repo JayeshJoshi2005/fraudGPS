@@ -2,7 +2,7 @@
 
 ## Execution rules
 
-Phases 0–4 are **verified** following the user's explicit implementation requests. Phases 5–6 are **not started**. Activate only the requested phase, complete its checks, update [PROGRESS.md](PROGRESS.md), and stop. Explicit user direction is required to advance to the next phase.
+Phases 0–6 are **verified locally** following the user's explicit implementation requests. Phase 6 was authorized by "now phase 6" on 25-Oct-2026. See [its review](PHASE_6_REVIEW.md) and [contract](PHASE_6_CONTRACT.md). Hosting requires a separate request.
 
 Within an active phase, team members may divide modules against agreed contracts. Record ownership before editing shared files. Do not pull later features into the phase except a documented prerequisite needed for the current integration.
 
@@ -64,20 +64,24 @@ Deliver entity, behavioral, network, and composite DNA; campaign APIs; typed pan
 
 Deliver ReportLab export, six report sections, prioritized recommendations, alert panel, toasts, case-summary checklist, and keyboard shortcuts.
 
-- [ ] Open the downloaded PDF and check content, pagination, rupee glyphs, evidence references, and long tables.
-- [ ] Verify UI and PDF share the same analysis results and do not invent cash-out methods.
-- [ ] Verify alert navigation, toast cleanup, download failure handling, and shortcuts while typing in form controls.
-- [ ] Run the full investigation flow; stop for Phase 5 review.
+- [x] Open the downloaded PDF and check content, pagination, rupee glyphs, evidence references, and long tables.
+- [x] Verify UI and PDF share the same analysis results and do not invent cash-out methods.
+- [x] Verify alert navigation, toast cleanup, download failure handling, and shortcuts while typing in form controls.
+- [x] Run the full investigation flow; stop for Phase 5 review. Evidence: [PHASE_5_REVIEW.md](PHASE_5_REVIEW.md).
 
 ## Phase 6 — Local demo reliability and polish
 
 Deliver visual refinements, robust edge states, local startup script, measured performance, and final demo evidence. Add no new product features.
 
-- [ ] Demonstrate Gamma with 10–15+ visible nodes, 2–3 split points, and at least two probable terminals.
-- [ ] Verify trace → inspect → DNA → replay → summary → report at 1920×1080.
-- [ ] Check backend unavailable, empty trail, failed risk/DNA request, retry, and no console errors.
-- [ ] Measure graph/API targets with environment, dataset, and cold/warm conditions recorded.
-- [ ] Start from documented prerequisites using readiness checks rather than a fixed startup delay.
-- [ ] Complete three demo rehearsals and record remaining limitations.
-- [ ] Test a replacement dataset and prepare the official 8–10 minute video and individual contribution explanations; check [hackathon requirements](HACKATHON.md).
-- [ ] Stop; hosting/cloud work needs a separate request.
+- [x] Demonstrate Gamma with 31 accounts, six split events, and four probable terminals at depth 5.
+- [x] Verify trace → inspect → DNA → replay → summary → report at 1920×1080.
+- [x] Check backend unavailable, empty trail, failed risk/DNA request, retry, and no console errors.
+- [x] Measure graph/API targets with environment, dataset, and cold/warm conditions recorded.
+- [x] Start from documented prerequisites using readiness checks rather than a fixed startup delay.
+- [x] Complete three demo rehearsals and record remaining limitations.
+- [x] Test an independent replacement dataset; prepare a nine-minute recording script and contribution worksheet in [the demo guide](DEMO_GUIDE.md).
+- [x] Stop application scope here; hosting/cloud work needs a separate request.
+
+Team submission tasks remain: record/upload the narrated video, fill in actual
+individual contributions, and verify current [hackathon requirements](HACKATHON.md).
+These are separate from the completed local application implementation.

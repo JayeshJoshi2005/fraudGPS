@@ -10,6 +10,8 @@ from pathlib import Path
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
+from demo_process import stop_demo_process
+
 
 def main() -> None:
     with socket.socket() as listener:
@@ -84,12 +86,8 @@ def main() -> None:
             )
         )
     finally:
-        process.terminate()
-        try:
-            output, _ = process.communicate(timeout=5)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            output, _ = process.communicate(timeout=5)
+        stop_demo_process(process)
+        output, _ = process.communicate(timeout=5)
         if output:
             print(output.decode(errors="replace"), file=sys.stderr)
 
